@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -31,7 +30,17 @@
 </head>
   <body class="bg-gray-100">
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
+    <!-- 
+      IMPORTANT: For production deployment (e.g., Cloudflare Pages, Netlify), 
+      you MUST configure your hosting to run the `npm run build` command and 
+      serve the `dist` directory. Vite will automatically rewrite this script 
+      tag in `dist/index.html` to point to the correct, transpiled JavaScript bundle 
+      (e.g., `/assets/index-xxxxxxxx.js`). 
+      
+      This change below from `index.tsx` to `index.js` is an attempt to align 
+      the development HTML with expected JavaScript, but the ultimate solution 
+      requires a proper build and serving of the output `dist` folder.
+    -->
+    <script type="module" src="./index.js"></script>
 </body>
 </html>
-        

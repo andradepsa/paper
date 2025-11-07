@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useRef } from 'react';
 import { generateInitialPaper, analyzePaper, improvePaper, generatePaperTitle, fixLatexPaper, reformatPaperWithStyleGuide } from './services/geminiService';
 import type { Language, IterationAnalysis, PaperSource, AnalysisResult, StyleGuide } from './types';
@@ -37,6 +36,7 @@ type PublishedArticle = {
 
 // Main App Component
 const App: React.FC = () => {
+    console.log('App component rendering...'); // Diagnostic log
     // Overall workflow step
     const [step, setStep] = useState(1);
     const [isApiModalOpen, setIsApiModalOpen] = useState(false);

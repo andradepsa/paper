@@ -1,5 +1,6 @@
 
 
+
 import React, { Component, ReactNode, ErrorInfo } from 'react';
 
 interface ErrorBoundaryProps {
@@ -13,37 +14,34 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // FIX: Changed state initialization to use a constructor. This is a more robust pattern that avoids potential issues with class field syntax in some environments and ensures the component's type is correctly inferred.
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-      errorInfo: null,
-    };
-  }
+  // FIX: Declare 'state' as a class property with its explicit type.
+  // This is a more modern and robust way to initialize state in React class components
+  // and resolves the type inference issues for 'this.state', 'this.props', and 'this.setState'.
+  state: ErrorBoundaryState = {
+    hasError: false,
+    error: null,
+    errorInfo: null,
+  };
 
-  // FIX: Removed 'public' modifier and renamed '_' to 'error' for clarity.
+  // FIX: Removed 'public' modifier as it's not standard for static methods in React.
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     // Update state so the next render will show the fallback UI.
     return { hasError: true, error: error, errorInfo: null };
   }
 
-  // FIX: Removed 'public' modifier.
-  // FIX: Explicitly use the imported ErrorInfo type to ensure TypeScript correctly recognizes this as a React Component method.
+  // FIX: Removed 'public' modifier as it's not standard for React lifecycle methods.
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
-    // FIX: Using a constructor for state initialization resolves the type inference issue, making `this.setState` available.
+    // FIX: 'this.setState' is now correctly recognized due to explicit 'state' declaration.
     this.setState({
       error: error,
       errorInfo: errorInfo,
     });
-    // You can also log error messages to an error reporting service here
-    // logErrorToMyService(error, errorInfo);
   }
 
-  // FIX: Removed 'public' modifier.
+  // FIX: Removed 'public' modifier as it's not standard for React lifecycle methods.
   render() {
+    // FIX: 'this.state' is now correctly recognized.
     if (this.state.hasError) {
       // You can render any custom fallback UI
       return (
@@ -62,7 +60,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       );
     }
 
-    // FIX: Using a constructor for state initialization resolves the type inference issue, making `this.props` available.
+    // FIX: 'this.props' is now correctly recognized due to proper class inheritance and state declaration.
     return this.props.children;
   }
 }

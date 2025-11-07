@@ -1,3 +1,4 @@
+
 import React, { Component, ReactNode } from 'react';
 
 interface ErrorBoundaryProps {
@@ -7,46 +8,51 @@ interface ErrorBoundaryProps {
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
+  errorInfo: React.ErrorInfo | null;
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public state: ErrorBoundaryState = {
     hasError: false,
     error: null,
+    errorInfo: null,
   };
 
-  public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  public static getDerivedStateFromError(_: Error): ErrorBoundaryState {
     // Update state so the next render will show the fallback UI.
-    return { hasError: true, error };
+    return { hasError: true, error: _, errorInfo: null };
   }
 
   public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("Uncaught error caught by ErrorBoundary:", error, errorInfo);
+    console.error("Uncaught error:", error, errorInfo);
+    this.setState({
+      error: error,
+      errorInfo: errorInfo,
+    });
+    // You can also log error messages to an error reporting service here
+    // logErrorToMyService(error, errorInfo);
   }
 
   public render() {
-    // Fix: Access `children` from `this.props`. If TypeScript incorrectly reports `props` as
-    // not existing on `ErrorBoundary`, cast `this` to `any` as a workaround.
-    const { children } = (this as any).props;
-
     if (this.state.hasError) {
       // You can render any custom fallback UI
       return (
-        <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#fef2f2', border: '1px solid #ef4444', borderRadius: '8px', margin: '20px auto', maxWidth: '600px', color: '#991b1b' }}>
-          <h1 style={{ fontSize: '24px', marginBottom: '10px' }}>Something went wrong.</h1>
-          <p style={{ fontSize: '16px', marginBottom: '15px' }}>We're sorry for the inconvenience. Please try refreshing the page.</p>
+        <div style={{ padding: '20px', textAlign: 'center', border: '1px solid red', borderRadius: '8px', margin: '20px', backgroundColor: '#ffe6e6' }}>
+          <h2 style={{ color: 'red' }}>Oops! Something went wrong.</h2>
+          <p>We're sorry for the inconvenience. Please try refreshing the page.</p>
           {this.state.error && (
-            <details style={{ textAlign: 'left', whiteSpace: 'pre-wrap', maxHeight: '200px', overflowY: 'auto', border: '1px solid #ef4444', padding: '10px', borderRadius: '4px', backgroundColor: '#fff' }}>
-              <summary>Error Details</summary>
-              {this.state.error.toString()}
-              {/* For full stack trace: {this.state.error.stack} */}
+            <details style={{ whiteSpace: 'pre-wrap', textAlign: 'left', margin: '20px auto', maxWidth: '600px', backgroundColor: '#fff', padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}>
+              <summary style={{ cursor: 'pointer', fontWeight: 'bold' }}>Error Details</summary>
+              <p>{this.state.error.toString()}</p>
+              <br />
+              {this.state.errorInfo?.componentStack}
             </details>
           )}
         </div>
       );
     }
 
-    return children;
+    return this.props.children;
   }
 }
 

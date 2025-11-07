@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { generateInitialPaper, analyzePaper, improvePaper, generatePaperTitle, fixLatexPaper, reformatPaperWithStyleGuide } from './services/geminiService';
 import type { Language, IterationAnalysis, PaperSource, AnalysisResult, StyleGuide } from './types';
@@ -270,7 +269,9 @@ const App: React.FC = () => {
     };
 
     const handleFullAutomation = async (articlesToGenerate?: number) => {
+        console.log(`[DEBUG] handleFullAutomation called. articlesToGenerate: ${articlesToGenerate}, numberOfArticles state: ${numberOfArticles}`);
         const articlesToProcess = articlesToGenerate ?? numberOfArticles;
+        console.log(`[DEBUG] Articles to process in this run: ${articlesToProcess}`);
 
         // PRE-FLIGHT CHECK FOR ZENODO TOKEN
         const storedToken = localStorage.getItem('zenodo_api_key');
@@ -289,6 +290,7 @@ const App: React.FC = () => {
         setStep(1); // Start at step 1 for visual progress
     
         for (let i = 1; i <= articlesToProcess; i++) {
+            console.log(`[DEBUG] Starting article generation loop. Current i: ${i} / ${articlesToProcess}`);
             // Reset states for a single paper run
             setIsGenerationComplete(false);
             setGenerationProgress(0);

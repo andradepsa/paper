@@ -1,188 +1,190 @@
-# Advanced Scientific Paper Generator - Manual de Uso
+# Advanced Scientific Paper Generator - User Manual
 
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+</div>
 
+## 1. Introduction
 
-## 1. Introdução
+The "Advanced Scientific Paper Generator" is a powerful, AI-driven application designed to drastically simplify the scientific paper creation process. Starting with a broad mathematical topic, the tool generates an innovative paper title and then drafts a complete LaTeX document based on that title. What truly sets this tool apart is its multi-iteration analysis system, which rigorously evaluates the generated paper against 28 distinct quality metrics. Based on this analysis, the AI iteratively refines the paper, ensuring a high standard of academic quality and consistency. To top it off, it includes a dedicated "Fixer" tool to resolve common LaTeX compilation issues.
 
-O "Advanced Scientific Paper Generator" é uma aplicação poderosa, alimentada por IA, projetada para simplificar drasticamente o processo de criação de artigos científicos. Começando com um tópico matemático amplo, a ferramenta gera um título de artigo inovador e, em seguida, elabora um documento LaTeX completo com base nesse título. O que realmente diferencia esta ferramenta é o seu sistema de análise multi-iteração, que avalia rigorosamente o artigo gerado em 28 métricas de qualidade distintas. Com base nessas análises, a IA refina iterativamente o artigo, garantindo um alto padrão de qualidade acadêmica e consistência. Para completar, inclui uma ferramenta "Fixer" dedicada para resolver problemas comuns de compilação LaTeX.
+This tool is ideal for researchers, students, and academics looking for an intelligent assistant to kickstart their writing process, refine drafts, or explore new research directions with AI-generated insights.
 
-Esta ferramenta é ideal para pesquisadores, estudantes e acadêmicos que procuram um assistente inteligente para iniciar seu processo de escrita, refinar rascunhos ou explorar novas direções de pesquisa com insights gerados por IA.
-
-**Autor:** SÉRGIO DE ANDRADE, PAULO
-Graduado do Curso de matemática, Faculdade de Guarulhos (FG), Guarulhos, São Paulo.
+**Author:** SÉRGIO DE ANDRADE, PAULO
+Graduate of the Mathematics Course, Faculdade de Guarulhos (FG), Guarulhos, São Paulo.
 Email: andradepsa@gmail.com.
-ID Lattes: 7286865766488458.
+Lattes ID: 7286865766488458.
 ORCID: https://orcid.org/0009-0004-2555-3178
 
 **DOI (Zenodo):** 10.5281/zenodo.17425500
 
-## 2. Principais Funcionalidades
+## 2. Key Features
 
-*   **Geração de Títulos por IA:** Gera um título de artigo de pesquisa novo e de alto impacto a partir de um tópico matemático amplo.
-*   **Geração Completa de Artigos em LaTeX:** Produz um artigo científico completo, incluindo resumo, introdução, metodologia, resultados, discussão, conclusão e uma bibliografia formatada, tudo em LaTeX válido.
-*   **Análise Iterativa de Qualidade:** Realiza até 12 iterações de análise, avaliando o artigo em 28 métricas de qualidade (ex: Foco no Tópico, Clareza da Escrita, Rigor Metodológico, Precisão Técnica LaTeX).
-*   **Melhoria Inteligente do Artigo:** Com base na análise, a IA refina iterativamente o código-fonte LaTeX para abordar as fraquezas identificadas.
-*   **Conclusão Antecipada da Análise:** O processo de análise é interrompido precocemente se o artigo atingir um alto padrão de qualidade (sem pontuações "vermelhas"), economizando tempo e recursos computacionais.
-*   **Suporte a Múltiplos Idiomas:** Gere artigos e receba feedback em Português, Inglês, Espanhol ou Francês.
-*   **Seleção Flexível de Modelos:** Escolha entre modelos de IA "rápidos" (Gemini 2.5 Flash) e "poderosos" (Gemini 2.5 Pro) para diferentes tarefas, otimizando velocidade e qualidade.
-*   **Comprimento Ajustável do Artigo:** Especifique o número de páginas desejado para o artigo gerado.
-*   **Pesquisa Google como Base (Grounding):** Integra a Pesquisa Google para encontrar fontes acadêmicas relevantes e atualizadas para a geração da bibliografia.
-*   **Modal "Fixer" LaTeX:** Uma ferramenta dedicada para diagnosticar e corrigir automaticamente problemas comuns de compilação LaTeX, como escape de caracteres, incompatibilidades de citação e validação do preâmbulo.
-*   **Otimização de Custos:** A utilização estratégica de modelos e a parada antecipada minimizam o consumo de tokens da API e os custos operacionais.
+*   **AI Title Generation:** Generates a novel and high-impact research paper title from a broad mathematical topic.
+*   **Complete LaTeX Paper Generation:** Produces a full scientific paper, including an abstract, introduction, methodology, results, discussion, conclusion, and a formatted bibliography, all in valid LaTeX.
+*   **Iterative Quality Analysis:** Performs up to 12 analysis iterations, evaluating the paper on 28 quality metrics (e.g., Topic Focus, Writing Clarity, Methodological Rigor, LaTeX Technical Accuracy).
+*   **Intelligent Paper Improvement:** Based on the analysis, the AI iteratively refines the LaTeX source code to address identified weaknesses.
+*   **Early Analysis Completion:** The analysis process stops early if the paper reaches a high quality standard (no "red" scores), saving time and computational resources.
+*   **Multi-language Support:** Generate papers and receive feedback in Portuguese, English, Spanish, or French.
+*   **Flexible Model Selection:** Choose between "fast" (Gemini 2.5 Flash) and "powerful" (Gemini 2.5 Pro) AI models for different tasks, optimizing for speed and quality.
+*   **Adjustable Paper Length:** Specify the desired number of pages for the generated paper.
+*   **Google Search Grounding:** Integrates Google Search to find relevant and up-to-date academic sources for bibliography generation.
+*   **LaTeX "Fixer" Modal:** A dedicated tool to automatically diagnose and fix common LaTeX compilation issues, such as character escaping, citation mismatches, and preamble validation.
+*   **Cost Optimization:** Strategic model usage and early stopping minimize API token consumption and operational costs.
 
-## 3. Como Usar o Aplicativo
+## 3. How to Use the Application
 
-O aplicativo irá guiá-lo através de um processo claro e intuitivo de três etapas para gerar e refinar seu artigo científico diretamente na interface do Google AI Studio.
+The application will guide you through a clear and intuitive three-step process to generate and refine your scientific paper directly within the Google AI Studio interface.
 
-### 3.1 Etapa 1: Configuração
+### 3.1 Step 1: Configuration
 
-Esta seção permite que você configure os parâmetros básicos para o seu artigo e os modelos de IA.
+This section allows you to set the basic parameters for your paper and the AI models.
 
-#### 3.1.1 Selecionar Idioma
+#### 3.1.1 Select Language
 
-*   **Objetivo:** Escolher o idioma em que seu artigo será gerado e em que a IA se comunicará.
-*   **Como Usar:** Na seção "Step 1: Configuration", você verá botões com bandeiras e nomes de idiomas (ex: "🇬🇧 English", "🇧🇷 Português"). Clique no botão correspondente ao idioma desejado. A interface será atualizada, e todo o conteúdo gerado será nesse idioma.
+*   **Purpose:** To choose the language in which your paper will be generated and in which the AI will communicate.
+*   **How to Use:** In the "Step 1: Configuration" section, you will see buttons with flags and language names (e.g., "🇬🇧 English", "🇧🇷 Português"). Click the button corresponding to your desired language. The interface will update, and all generated content will be in that language.
 
-#### 3.1.2 Escolher Modelos de IA
+#### 3.1.2 Choose AI Models
 
-*   **Objetivo:** Configurar quais modelos de IA a aplicação utilizará para as diferentes fases do processo. Recomendamos seguir as sugestões padrões para o melhor equilíbrio entre velocidade e qualidade.
-*   **Como Usar:** Abaixo da seleção de idioma, você encontrará duas categorias:
-    *   **Fast Model (for analysis):** Este modelo é mais rápido e eficiente para tarefas de alta frequência, como a análise da qualidade do artigo e a geração inicial do título. `gemini-2.5-flash` é geralmente o padrão e recomendado.
-    *   **Powerful Model (for generation):** Este modelo é mais robusto e ideal para tarefas complexas que exigem raciocínio avançado, como a geração do conteúdo inicial do artigo e as melhorias iterativas. `gemini-2.5-pro` é geralmente o padrão e recomendado.
-    *   Para cada categoria, clique no botão do modelo que deseja selecionar. Uma breve descrição de cada modelo é fornecida para ajudar na sua escolha.
+*   **Purpose:** To configure which AI models the application will use for different phases of the process. We recommend sticking to the default suggestions for the best balance of speed and quality.
+*   **How to Use:** Below the language selection, you will find two categories:
+    *   **Fast Model (for analysis):** This model is faster and more efficient for high-frequency tasks, such as paper quality analysis and initial title generation. `gemini-2.5-flash` is generally the default and recommended.
+    *   **Powerful Model (for generation):** This model is more robust and ideal for complex tasks requiring advanced reasoning, such as generating the initial paper content and iterative improvements. `gemini-2.5-pro` is generally the default and recommended.
+    *   For each category, click the model button you wish to select. A brief description of each model is provided to help your choice.
 
-#### 3.1.3 Definir Comprimento do Artigo
+#### 3.1.3 Define Paper Length
 
-*   **Objetivo:** Determinar o número aproximado de páginas que você deseja para o documento LaTeX final.
-*   **Como Usar:** Na parte inferior da seção "Step 1: Configuration", você verá botões com opções de contagem de páginas (ex: "12 Pages", "30 Pages"). Clique na opção desejada. A IA ajustará a profundidade e a extensão do conteúdo para tentar atender a este requisito.
+*   **Purpose:** To determine the approximate number of pages you want for the final LaTeX document.
+*   **How to Use:** At the bottom of the "Step 1: Configuration" section, you will see buttons with page count options (e.g., "12 Pages", "30 Pages"). Click your desired option. The AI will adjust the depth and breadth of the content to try and meet this requirement.
 
-### 3.2 Etapa 2: Gerar Paper
+### 3.2 Step 2: Generate Paper
 
-Esta é a etapa crucial onde o processo de geração e análise iterativa do artigo é iniciado.
+This is the crucial step where the paper generation and iterative analysis process is initiated.
 
-*   **Objetivo:** Iniciar todo o fluxo de trabalho: geração do título, escrita do artigo e subsequente análise e melhoria iterativa.
-*   **Como Usar:** Na seção "Step 2: Gerar Paper", clique no botão **"Gerar paper"**.
-*   **Fluxo do Processo (O que esperar):**
-    1.  **"Gerando Título..." (Generating Title...):** O aplicativo primeiro irá gerar um título novo e impactante com base em um tópico matemático aleatoriamente selecionado. Você verá este título ser exibido na seção "Results" uma vez que estiver pronto.
-    2.  **"Gerando Paper..." (Generating Paper...):** Em seguida, a IA escreverá o artigo científico completo em formato LaTeX, utilizando o título gerado e consultando fontes externas através da Pesquisa Google para embasar o conteúdo e a bibliografia.
-    3.  **"Analisando..." (Analyzing...):** O principal processo iterativo começa. A IA analisará o artigo em relação às 28 métricas, fornecerá feedback detalhado e, em seguida, tentará melhorar o artigo. Este ciclo se repetirá por várias iterações (até 12).
-*   **Barra de Progresso:** Uma barra de progresso aparecerá na seção "Results", mostrando o andamento geral da geração e análise.
-*   **Conclusão Antecipada da Análise:** Se o artigo atingir um alto padrão de qualidade (sem pontuações "vermelhas") antes que todas as iterações sejam concluídas, uma mensagem **"✅ Análise concluída!"** aparecerá, e o processo será interrompido antecipadamente, economizando seu tempo.
+*   **Purpose:** To start the entire workflow: title generation, paper writing, and subsequent iterative analysis and improvement.
+*   **How to Use:** In the "Step 2: Generate Paper" section, click the **"Generate paper"** button.
+*   **Process Flow (What to expect):**
+    1.  **"Generating Title...":** The application will first generate a new and impactful title based on a randomly selected mathematical topic. You will see this title displayed in the "Results" section once it's ready.
+    2.  **"Generating Paper...":** Next, the AI will write the complete scientific paper in LaTeX format, using the generated title and consulting external sources via Google Search to ground the content and bibliography.
+    3.  **"Analyzing...":** The main iterative process begins. The AI will analyze the paper against the 28 metrics, provide detailed feedback, and then attempt to improve the paper. This cycle will repeat for several iterations (up to 12).
+*   **Progress Bar:** A progress bar will appear in the "Results" section, showing the overall progress of the generation and analysis.
+*   **Early Analysis Completion:** If the paper reaches a high quality standard (no "red" scores) before all iterations are completed, a **"✅ Analysis complete!"** message will appear, and the process will stop early, saving you time.
 
-### 3.3 Etapa 3: Analisar Resultados
+### 3.3 Step 3: Analyze Results
 
-Uma vez que o processo esteja completo (ou tenha sido interrompido precocemente), você poderá revisar os resultados detalhadamente.
+Once the process is complete (or has stopped early), you can review the results in detail.
 
-#### 3.3.1 Código-Source LaTeX Gerado
+#### 3.3.1 Generated LaTeX Source Code
 
-*   **Objetivo:** Exibir o código-fonte LaTeX final do seu artigo científico.
-*   **Localização:** Este código aparecerá em uma grande área de texto rolável no lado esquerdo da seção "Results".
-*   **Importante:** Este é o arquivo que você pode copiar e usar em qualquer editor LaTeX (como Overleaf, TeXmaker, ou compiladores online como LaTeX-online.cc) para gerar seu PDF.
+*   **Purpose:** To display the final LaTeX source code of your scientific paper.
+*   **Location:** This code will appear in a large, scrollable text area on the left side of the "Results" section.
+*   **Important:** This is the file you can copy and use in any LaTeX editor (like Overleaf, TeXmaker, or online compilers like LaTeX-online.cc) to generate your PDF.
 
-#### 3.3.2 Copiar o Artigo
+#### 3.3.2 Copy the Paper
 
-*   **Objetivo:** Transferir facilmente o código LaTeX para a sua área de transferência para uso em um editor LaTeX externo.
-*   **Como Usar:** Clique no botão **"Copy Latex"** (com um ícone de cópia) localizado no canto superior direito da área de texto do código LaTeX. Uma mensagem **"✅ Copied!"** aparecerá brevemente para confirmar o sucesso.
+*   **Purpose:** To easily transfer the LaTeX code to your clipboard for use in an external LaTeX editor.
+*   **How to Use:** Click the **"Copy Latex"** button (with a copy icon) located at the top right of the LaTeX code text area. A **"✅ Copied!"** message will appear briefly to confirm success.
 
-#### 3.3.3 Ferramenta "Fixer" LaTeX
+#### 3.3.3 LaTeX "Fixer" Tool
 
-*   **Objetivo:** Corrigir problemas técnicos comuns de compilação no código LaTeX gerado. Esta ferramenta é particularmente útil se você encontrar erros ao tentar compilar o artigo externamente.
-*   **Como Usar:**
-    1.  Clique no botão **"Fixer"** (ícone de chave inglesa) localizado acima da área de texto do código LaTeX, no lado direito.
-    2.  Uma janela modal ("LaTeX Compilation Fixer") será aberta, listando várias opções de correção (ex: "Fix Character Escaping," "Fix Citation Mismatches").
-    3.  Marque as caixas ao lado das correções que deseja aplicar.
-    4.  Clique em **"Apply Fixes"**. A IA processará o artigo e tentará corrigir os problemas selecionados.
-    5.  Uma mensagem **"Fixes applied successfully!"** confirmará as alterações. Você poderá então copiar o código LaTeX atualizado.
+*   **Purpose:** To correct common technical compilation issues in the generated LaTeX code. This tool is particularly useful if you encounter errors when trying to compile the paper externally.
+*   **How to Use:**
+    1.  Click the **"Fixer"** button (wrench icon) located above the LaTeX code text area, on the right side.
+    2.  A modal window ("LaTeX Compilation Fixer") will open, listing several correction options (e.g., "Fix Character Escaping," "Fix Citation Mismatches").
+    3.  Check the boxes next to the fixes you want to apply.
+    4.  Click **"Apply Fixes"**. The AI will process the paper and attempt to correct the selected issues.
+    5.  A **"Fixes applied successfully!"** message will confirm the changes. You can then copy the updated LaTeX code.
 
-#### 3.3.4 Análise Iterativa
+#### 3.3.4 Iterative Analysis
 
-*   **Objetivo:** Fornecer um detalhamento minucioso do processo de revisão multi-iteração da IA, mostrando as pontuações e sugestões de melhoria para cada métrica de qualidade.
-*   **Localização:** Este painel aparecerá no lado direito da seção "Results".
-*   **Entendendo a Exibição:**
-    *   **Iterações:** Cada bloco numerado (ex: "═══ ITERATION 1 of 12 ═══") representa uma rodada de análise e melhoria.
-    *   **Topic Name (Nome do Tópico):** A métrica de qualidade específica avaliada (ex: "WRITING CLARITY", "METHODOLOGICAL RIGOR").
-    *   **Score (Pontuação):** Uma pontuação numérica de 0.0 a 10.0, indicando a qualidade do artigo para aquela métrica.
-        *   **Verde (8.5-10.0):** Alta qualidade, pouca ou nenhuma melhoria necessária.
-        *   **Amarelo (7.0-8.4):** Qualidade boa, mas com espaço para algumas melhorias.
-        *   **Vermelho (0.0-6.9):** Requer atenção significativa e melhorias substanciais.
-    *   **Improvement (Sugestão de Melhoria):** Uma sugestão concisa de uma única frase da IA sobre como melhorar o artigo para aquele tópico específico.
+*   **Purpose:** To provide a detailed breakdown of the AI's multi-iteration review process, showing scores and improvement suggestions for each quality metric.
+*   **Location:** This panel will appear on the right side of the "Results" section.
+*   **Understanding the Display:**
+    *   **Iterations:** Each numbered block (e.g., "═══ ITERATION 1 of 12 ═══") represents one round of analysis and improvement.
+    *   **Topic Name:** The specific quality metric being evaluated (e.g., "WRITING CLARITY", "METHODOLOGICAL RIGOR").
+    *   **Score:** A numerical score from 0.0 to 10.0, indicating the paper's quality for that metric.
+        *   **Green (8.5-10.0):** High quality, little to no improvement needed.
+        *   **Yellow (7.0-8.4):** Good quality, but with room for some improvements.
+        *   **Red (0.0-6.9):** Requires significant attention and substantial improvements.
+    *   **Improvement:** A concise, single-sentence suggestion from the AI on how to improve the paper for that specific topic.
 
-#### 3.3.5 Fontes Utilizadas
+#### 3.3.5 Sources Used
 
-*   **Objetivo:** Listar as fontes externas da web que a IA utilizou para embasar o conteúdo e gerar a bibliografia do artigo.
-*   **Localização:** Abaixo da área de texto do código LaTeX.
-*   **Como Usar:** Clique nos links fornecidos para visualizar as páginas de origem originais em seu navegador. Isso permite verificar a proveniência das informações.
+*   **Purpose:** To list the external web sources the AI used to ground the content and generate the paper's bibliography.
+*   **Location:** Below the LaTeX code text area.
+*   **How to Use:** Click the provided links to view the original source pages in your browser. This allows you to verify the provenance of the information.
 
-## 4. Como Fazer o Upload e Usar no Google AI Studio
+## 4. How to Upload and Use in Google AI Studio
 
-Este guia detalha como carregar este projeto para o ambiente de desenvolvimento de aplicativos do Google AI Studio, onde você pode executá-lo diretamente no navegador sem a necessidade de configurações locais complexas.
+This guide details how to upload this project to the Google AI Studio application development environment, where you can run it directly in the browser without complex local setups.
 
-### 4.1 Pré-requisitos
+### 4.1 Prerequisites
 
-*   Uma conta Google.
-*   Acesso ao [Google AI Studio](https://aistudio.google.com/).
-*   Os arquivos completos do projeto "Advanced Scientific Paper Generator" em seu computador local.
+*   A Google account.
+*   Access to [Google AI Studio](https://aistudio.google.com/).
+*   The complete "Advanced Scientific Paper Generator" project files on your local computer.
 
-### 4.2 Etapas para o Upload
+### 4.2 Upload Steps
 
-1.  **Acesse o Google AI Studio:**
-    *   Abra seu navegador e vá para [https://aistudio.google.com/](https://aistudio.google.com/).
-    *   Faça login com sua conta Google, se ainda não o fez.
+1.  **Access Google AI Studio:**
+    *   Open your browser and go to [https://aistudio.google.com/](https://aistudio.google.com/).
+    *   Log in with your Google account if you haven't already.
 
-2.  **Navegue até a Seção "Meus Aplicativos" (ou similar):**
-    *   No painel lateral esquerdo do Google AI Studio, procure por uma opção como "Meus Aplicativos", "Projetos" ou "Aplicativos". Clique nela. Esta seção é onde você pode gerenciar seus projetos de aplicativos web.
+2.  **Navigate to the "My Apps" Section (or similar):**
+    *   On the left sidebar of Google AI Studio, look for an option like "My Apps," "Projects," or "Apps." Click on it. This section is where you manage your web application projects.
 
-3.  **Crie um Novo Aplicativo:**
-    *   Dentro da seção de aplicativos, procure por um botão como "+ Novo Aplicativo", "Criar Projeto" ou um ícone de adição. Clique nele para iniciar a criação de um novo aplicativo.
+3.  **Create a New App:**
+    *   Within the apps section, look for a button like "+ New App," "Create Project," or an add icon. Click it to start creating a new application.
 
-4.  **Carregue os Arquivos do Projeto:**
-    *   O Google AI Studio solicitará que você carregue os arquivos do seu projeto.
-    *   **Opção 1 (Recomendada): Arrastar e Soltar.** Localize a pasta raiz do projeto "Advanced Scientific Paper Generator" em seu computador. Arraste e solte *toda a pasta* diretamente na área designada no Google AI Studio. O sistema fará o upload de todos os arquivos e subpastas automaticamente.
-    *   **Opção 2: Selecionar Pasta.** Alternativamente, você pode clicar na opção para "Selecionar Pasta" (ou "Procurar Arquivos") e navegar até a pasta raiz do projeto em seu sistema de arquivos, selecionando-a para upload.
-    *   Aguarde até que o upload seja concluído. Você verá uma representação da estrutura do seu projeto no Google AI Studio.
+4.  **Upload the Project Files:**
+    *   Google AI Studio will prompt you to upload your project files.
+    *   **Option 1 (Recommended): Drag and Drop.** Locate the root folder of the "Advanced Scientific Paper Generator" project on your computer. Drag and drop the *entire folder* directly onto the designated area in Google AI Studio. The system will upload all files and subfolders automatically.
+    *   **Option 2: Select Folder.** Alternatively, you can click the option to "Select Folder" (or "Browse Files") and navigate to the project's root folder on your file system, selecting it for upload.
+    *   Wait for the upload to complete. You will see a representation of your project's structure in Google AI Studio.
 
-5.  **Configure a Chave da API Gemini:**
-    *   **Importante:** Para que o aplicativo funcione, ele precisa acessar sua Chave da API Gemini. O Google AI Studio gerencia isso de forma segura, *sem que você precise alterar o código do aplicativo*.
-    *   Após o upload, o Google AI Studio geralmente o levará para a tela de configurações ou detalhes do seu novo aplicativo.
-    *   Procure por uma seção relacionada a "Variáveis de Ambiente" ou "Chave da API".
-    *   Lá, você verá uma opção para **"Selecionar Chave da API"** ou **"Gerenciar Chaves da API"**. Clique nela.
-    *   Selecione uma chave da API Gemini existente ou crie uma nova se necessário. Esta chave será injetada automaticamente no ambiente de execução do seu aplicativo, permitindo que ele se comunique com os modelos Gemini.
-    *   Certifique-se de que a API key selecionada tenha permissões para os modelos `gemini-2.5-flash` e `gemini-2.5-pro`.
-    *   Um link para a documentação de faturamento pode ser encontrado em: [ai.google.dev/gemini-api/docs/billing](https://ai.google.dev/gemini-api/docs/billing).
+5.  **Configure the Gemini API Key:**
+    *   **Important:** For the application to work, it needs to access your Gemini API Key. Google AI Studio manages this securely, *without you needing to change the application code*.
+    *   After the upload, Google AI Studio will usually take you to the settings or details screen for your new app.
+    *   Look for a section related to "Environment Variables" or "API Key."
+    *   There, you will see an option to **"Select API Key"** or **"Manage API Keys."** Click it.
+    *   Select an existing Gemini API key or create a new one if needed. This key will be automatically injected into your application's runtime environment, allowing it to communicate with the Gemini models.
+    *   Ensure the selected API key has permissions for the `gemini-2.5-flash` and `gemini-2.5-pro` models.
+    *   A link to the billing documentation can be found at: [ai.google.dev/gemini-api/docs/billing](https://ai.google.dev/gemini-api/docs/billing).
 
-6.  **Execute o Aplicativo:**
-    *   Com os arquivos carregados e a chave da API configurada, procure por um botão como "Executar Aplicativo", "Preview" ou um ícone de "Play" na interface do Google AI Studio.
-    *   Clique neste botão para iniciar o seu "Advanced Scientific Paper Generator". O aplicativo será carregado em uma nova aba ou painel dentro do ambiente do Google AI Studio, pronto para uso, exatamente como descrito na seção "3. Como Usar o Aplicativo".
+6.  **Run the Application:**
+    *   With the files uploaded and the API key configured, look for a button like "Run App," "Preview," or a "Play" icon in the Google AI Studio interface.
+    *   Click this button to start your "Advanced Scientific Paper Generator." The application will load in a new tab or panel within the Google AI Studio environment, ready for use, exactly as described in the "3. How to Use the Application" section.
 
-Agora você pode usar o aplicativo diretamente no ambiente do Google AI Studio!
+You can now use the application directly in the Google AI Studio environment!
 
-## 5. Insights Técnicos
+## 5. Technical Insights
 
-### Modelos de IA
-A aplicação aproveita o poder dos modelos Gemini do Google:
-*   `gemini-2.5-flash`: Utilizado para tarefas mais rápidas e menos intensivas em recursos, como a geração inicial do título e a análise iterativa.
-*   `gemini-2.5-pro`: Empregado para tarefas mais complexas e que exigem maior capacidade de raciocínio, como a geração inicial do artigo e as melhorias iterativas detalhadas.
+### AI Models
+The application leverages the power of Google's Gemini models:
+*   `gemini-2.5-flash`: Used for faster, less resource-intensive tasks, such as initial title generation and iterative analysis.
+*   `gemini-2.5-pro`: Employed for more complex tasks that require greater reasoning capabilities, such as initial paper generation and detailed iterative improvements.
 
-### Grounding (Fundamentação)
-A aplicação utiliza a Pesquisa Google como ferramenta de *grounding* para garantir que o conteúdo gerado seja factualmente relevante e atualizado. Quando o artigo inicial é gerado, a IA consulta a Pesquisa Google por fontes acadêmicas relacionadas ao título do artigo e as utiliza para popular a bibliografia.
+### Grounding
+The application uses Google Search as a *grounding* tool to ensure the generated content is factually relevant and up-to-date. When the initial paper is generated, the AI queries Google Search for academic sources related to the paper's title and uses them to populate the bibliography.
 
-### Otimização de Custos e Tokens
-Para minimizar os custos da API e melhorar a eficiência, o sistema emprega várias estratégias inteligentes:
-*   **Seleção Inteligente de Modelos:** Modelos mais rápidos e econômicos (`gemini-2.5-flash`) são utilizados para tarefas frequentes (análise, geração de títulos), enquanto modelos mais poderosos e dispendiosos (`gemini-2.5-pro`) são reservados para etapas críticas de geração e melhoria complexa.
-*   **Conclusão Antecipada da Análise:** O loop de análise iterativa é projetado para parar assim que o artigo atinge um nível satisfatório de qualidade (zero pontuações "vermelhas"). Isso evita chamadas desnecessárias à API e reduz significativamente o consumo de tokens.
+### Cost and Token Optimization
+To minimize API costs and improve efficiency, the system employs several smart strategies:
+*   **Intelligent Model Selection:** Faster, more economical models (`gemini-2.5-flash`) are used for frequent tasks (analysis, title generation), while more powerful and expensive models (`gemini-2.5-pro`) are reserved for critical generation and complex improvement steps.
+*   **Early Analysis Completion:** The iterative analysis loop is designed to stop as soon as the paper reaches a satisfactory quality level (zero "red" scores). This avoids unnecessary API calls and significantly reduces token consumption.
 
-A tabela abaixo ilustra o impacto dessas otimizações, comparando o custo por iteração e o custo total do ciclo em um cenário de conclusão antecipada.
+The table below illustrates the impact of these optimizations, comparing the cost per iteration and the total cycle cost in an early completion scenario.
 
-| Etapa do Processo | Modelo Utilizado | Custo Estimado (Antes) | Custo Estimado (Agora) | Otimização Aplicada |
-| :-------------------------- | :------------------------ | :----------------------------- | :------------------------------------- | :-------------------------------------------------------------------------------- |
-| Geração de Título | `gemini-2.5-flash` | ~1.500 tokens | **~500 tokens** | Uso de modelo 'flash' em vez de 'pro' para tarefa simples. |
-| Geração Inicial do Paper | `gemini-2.5-pro` | ~150.000 tokens | ~150.000 tokens | Modelo 'pro' mantido para máxima qualidade na geração principal. |
-| Análise (por iteração) | `gemini-2.5-flash` | ~130.000 tokens | **~45.000 tokens** | Uso de modelo 'flash' e schema JSON para resposta estruturada. |
-| Melhoria (por iteração) | `gemini-2.5-pro` | ~140.000 tokens | ~140.000 tokens | Modelo 'pro' mantido para refinamento cirúrgico de alta qualidade. |
-| **Ciclo Iterativo Total (Ex: 3 iterações)** | **Misto** | ~2.080.000 tokens (12 iterações) | **~415.000 tokens** | **Conclusão antecipada** ao atingir a qualidade (sem notas vermelhas). |
+| Process Step                | Model Used         | Estimated Cost (Before)            | Estimated Cost (Now)                   | Optimization Applied                                           |
+| :-------------------------- | :----------------- | :--------------------------------- | :------------------------------------- | :----------------------------------------------------------------- |
+| Title Generation            | `gemini-2.5-flash` | ~1,500 tokens                      | **~500 tokens**                        | Using 'flash' model instead of 'pro' for a simple task.            |
+| Initial Paper Generation    | `gemini-2.5-pro`   | ~150,000 tokens                    | ~150,000 tokens                        | 'Pro' model maintained for maximum quality in the main generation. |
+| Analysis (per iteration)    | `gemini-2.5-flash` | ~130,000 tokens                    | **~45,000 tokens**                     | Using 'flash' model and JSON schema for structured response.       |
+| Improvement (per iteration) | `gemini-2.5-pro`   | ~140,000 tokens                    | ~140,000 tokens                        | 'Pro' model maintained for high-quality, surgical refinement.      |
+| **Total Iterative Cycle (Ex: 3 iterations)** | **Mixed**          | ~2,080,000 tokens (12 iterations) | **~415,000 tokens**                    | **Early completion** upon reaching quality (no red scores).        |
 
-## 6. Solução de Problemas
+## 6. Troubleshooting
 
-*   **"An error occurred: You exceeded your current quota..." (Você excedeu sua cota atual...):** Isso indica que você atingiu um limite de taxa com a API. A aplicação possui lógica de repetição integrada, mas se o problema persistir, aguarde um minuto antes de tentar novamente.
-*   **"Failed to parse analysis JSON..." (Falha ao analisar o JSON de análise...):** Este é um erro raro que indica que a resposta da IA para a análise não estava no formato JSON esperado. Tente executar o processo novamente.
-*   **Erros de compilação LaTeX (após copiar para um compilador externo):** Use a ferramenta "Fixer" interna (Etapa 3.3.3) para resolver problemas comuns. Se os problemas persistirem, revise cuidadosamente o código-fonte LaTeX em busca de erros de sintaxe.
+*   **"An error occurred: You exceeded your current quota...":** This indicates you have hit a rate limit with the API. The application has built-in retry logic, but if the issue persists, wait a minute before trying again.
+*   **"Failed to parse analysis JSON...":** This is a rare error indicating that the AI's response for the analysis was not in the expected JSON format. Try running the process again.
+*   **LaTeX compilation errors (after copying to an external compiler):** Use the internal "Fixer" tool (Step 3.3.3) to resolve common issues. If problems persist, carefully review the LaTeX source code for syntax errors.

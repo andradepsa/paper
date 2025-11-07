@@ -1,5 +1,6 @@
 
-import React, { Component, ReactNode } from 'react';
+
+import React, { Component, ReactNode, ErrorInfo } from 'react';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -8,23 +9,31 @@ interface ErrorBoundaryProps {
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
-  errorInfo: React.ErrorInfo | null;
+  errorInfo: ErrorInfo | null;
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  public state: ErrorBoundaryState = {
-    hasError: false,
-    error: null,
-    errorInfo: null,
-  };
-
-  public static getDerivedStateFromError(_: Error): ErrorBoundaryState {
-    // Update state so the next render will show the fallback UI.
-    return { hasError: true, error: _, errorInfo: null };
+  // FIX: Changed state initialization to use a constructor. This is a more robust pattern that avoids potential issues with class field syntax in some environments and ensures the component's type is correctly inferred.
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null,
+      errorInfo: null,
+    };
   }
 
-  public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  // FIX: Removed 'public' modifier and renamed '_' to 'error' for clarity.
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    // Update state so the next render will show the fallback UI.
+    return { hasError: true, error: error, errorInfo: null };
+  }
+
+  // FIX: Removed 'public' modifier.
+  // FIX: Explicitly use the imported ErrorInfo type to ensure TypeScript correctly recognizes this as a React Component method.
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
+    // FIX: Using a constructor for state initialization resolves the type inference issue, making `this.setState` available.
     this.setState({
       error: error,
       errorInfo: errorInfo,
@@ -33,7 +42,8 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     // logErrorToMyService(error, errorInfo);
   }
 
-  public render() {
+  // FIX: Removed 'public' modifier.
+  render() {
     if (this.state.hasError) {
       // You can render any custom fallback UI
       return (
@@ -52,6 +62,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       );
     }
 
+    // FIX: Using a constructor for state initialization resolves the type inference issue, making `this.props` available.
     return this.props.children;
   }
 }

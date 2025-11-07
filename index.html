@@ -31,16 +31,24 @@
   <body class="bg-gray-100">
     <div id="root"></div>
     <!-- 
-      IMPORTANT: For production deployment (e.g., Cloudflare Pages, Netlify), 
-      you MUST configure your hosting to run the `npm run build` command and 
-      serve the `dist` directory. Vite will automatically rewrite this script 
-      tag in `dist/index.html` to point to the correct, transpiled JavaScript bundle 
-      (e.g., `/assets/index-xxxxxxxx.js`). 
-      
-      This change below from `index.tsx` to `index.js` is an attempt to align 
-      the development HTML with expected JavaScript, but the ultimate solution 
-      requires a proper build and serving of the output `dist` folder.
+      IMPORTANT FOR CLOUDFLARE PAGES (AND SIMILAR HOSTING):
+      The "Failed to load module script" and "application/octet-stream" errors indicate that
+      your hosting environment is trying to serve the raw `index.tsx` (TypeScript) file directly,
+      instead of the transpiled JavaScript bundle produced by Vite.
+
+      To fix this, you MUST configure Cloudflare Pages (or your chosen host) to:
+      1.  **Run the Build Command:** `npm run build`
+      2.  **Serve the Output Directory:** `dist` (this is where Vite places the compiled JavaScript and the rewritten index.html)
+
+      The `src="/index.tsx"` below is the correct reference for Vite's development server.
+      During the `npm run build` process, Vite will automatically transform this
+      `index.html` in the `dist` folder to point to the correct, transpiled,
+      and hashed JavaScript bundle (e.g., `/assets/index-xxxxxxxx.js`).
+
+      If you still see a blank page or errors in the browser's console after
+      ensuring these Cloudflare Pages settings, please provide the full
+      console output and network tab errors.
     -->
-    <script type="module" src="./index.js"></script>
+    <script type="module" src="/index.tsx"></script>
 </body>
 </html>

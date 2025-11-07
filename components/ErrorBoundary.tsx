@@ -1,4 +1,3 @@
-
 import React, { Component, ReactNode } from 'react';
 
 interface ErrorBoundaryProps {
@@ -26,6 +25,10 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   public render() {
+    // Fix: Access `children` from `this.props`. If TypeScript incorrectly reports `props` as
+    // not existing on `ErrorBoundary`, cast `this` to `any` as a workaround.
+    const { children } = (this as any).props;
+
     if (this.state.hasError) {
       // You can render any custom fallback UI
       return (
@@ -33,7 +36,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
           <h1 style={{ fontSize: '24px', marginBottom: '10px' }}>Something went wrong.</h1>
           <p style={{ fontSize: '16px', marginBottom: '15px' }}>We're sorry for the inconvenience. Please try refreshing the page.</p>
           {this.state.error && (
-            <details style={{ textAlign: 'left', whiteSpace: 'pre-wrap', maxHeight: '200px', overflowY: 'auto', border: '19x solid #ef4444', padding: '10px', borderRadius: '4px', backgroundColor: '#fff' }}>
+            <details style={{ textAlign: 'left', whiteSpace: 'pre-wrap', maxHeight: '200px', overflowY: 'auto', border: '1px solid #ef4444', padding: '10px', borderRadius: '4px', backgroundColor: '#fff' }}>
               <summary>Error Details</summary>
               {this.state.error.toString()}
               {/* For full stack trace: {this.state.error.stack} */}
@@ -43,9 +46,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       );
     }
 
-    // Fix: Explicitly cast 'this' to 'any' to resolve a TypeScript error where 'props' property is not recognized on 'ErrorBoundary' type.
-    // This is an unusual error for a standard React class component and might indicate a type resolution issue in the environment.
-    return (this as any).props.children;
+    return children;
   }
 }
 

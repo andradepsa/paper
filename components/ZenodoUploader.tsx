@@ -7,6 +7,7 @@ interface ZenodoUploaderProps {
     keywords: string;
     authors: ZenodoAuthor[];
     compiledPdfFile: File | null;
+    zenodoToken: string;
     onFileSelect: (file: File | null) => void; // Keep for potential override or manual selection
     onPublishStart: () => void;
     onPublishSuccess: (result: { doi: string; zenodoLink: string; }) => void;
@@ -19,11 +20,10 @@ export interface ZenodoUploaderRef {
 }
 
 const ZenodoUploader = forwardRef<ZenodoUploaderRef, ZenodoUploaderProps>(({ 
-    title, abstractText, keywords, authors, compiledPdfFile, onFileSelect, onPublishStart, onPublishSuccess, onPublishError,
+    title, abstractText, keywords, authors, compiledPdfFile, zenodoToken, onFileSelect, onPublishStart, onPublishSuccess, onPublishError,
     extractedMetadata
 }, ref) => {
     const [useSandbox, setUseSandbox] = useState(false);
-    const [zenodoToken, setZenodoToken] = useState(''); 
     const [publicationLog, setPublicationLog] = useState<string[]>([]);
     const logContainerRef = useRef<HTMLDivElement>(null);
 
@@ -48,7 +48,7 @@ const ZenodoUploader = forwardRef<ZenodoUploaderRef, ZenodoUploaderProps>(({
         }
 
         if (!zenodoToken) {
-            const errorMsg = "Error: Please enter your Zenodo access token!";
+            const errorMsg = "Error: Zenodo access token is not configured. Please set it in the main settings (gear icon).";
             log(errorMsg);
             onPublishError(errorMsg);
             return;
@@ -232,24 +232,6 @@ const ZenodoUploader = forwardRef<ZenodoUploaderRef, ZenodoUploaderProps>(({
                 <label htmlFor="sandbox" className="ml-2 block text-sm text-gray-900">
                     Use Zenodo Sandbox (for testing)
                 </label>
-            </div>
-            {/* Zenodo Token Input */}
-            <div className="form-group mt-4">
-                <label htmlFor="zenodoToken">🔑 Zenodo Access Token:</label>
-                <input 
-                    type="password" 
-                    id="zenodoToken" 
-                    placeholder="Your Zenodo token" 
-                    value={zenodoToken} 
-                    onChange={(e) => setZenodoToken(e.target.value)} 
-                    className="block w-full p-2 border rounded"
-                    aria-required="true"
-                    aria-label="Zenodo Access Token"
-                />
-                <small style={{ color: '#6b7280', fontSize: '12px' }}>
-                    Obtain from: <a href="https://sandbox.zenodo.org/account/settings/applications/" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">Zenodo Sandbox</a> or 
-                    <a href="https://zenodo.org/account/settings/applications/" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">Zenodo Production</a>. Ensure permissions for `deposit:write` and `deposit:actions`.
-                </small>
             </div>
         </div>
     );

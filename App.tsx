@@ -765,6 +765,11 @@ const App: React.FC = () => {
             alert('❌ Nenhum PDF foi compilado ou carregado!');
             return;
         }
+        if (!zenodoToken) {
+            alert('❌ Token do Zenodo não configurado. Por favor, adicione-o nas configurações (ícone de engrenagem) antes de prosseguir.');
+            setIsApiModalOpen(true);
+            return;
+        }
         extractMetadata(latexCode);
         setStep(3);
     };
@@ -1162,6 +1167,7 @@ Este arquivo explica como usar os arquivos \`successful_compilations.json\` e \`
                             keywords={extractedMetadata.keywords}
                             authors={extractedMetadata.authors}
                             compiledPdfFile={compiledPdfFile}
+                            zenodoToken={zenodoToken}
                             onFileSelect={() => { /* Managed by parent */ }}
                             onPublishStart={() => {
                                 setIsUploading(true);

@@ -95,6 +95,7 @@ const App: React.FC = () => {
     const [compiledPdfFile, setCompiledPdfFile] = useState<File | null>(null);
     const [selectedStyle, setSelectedStyle] = useState<StyleGuide>('abnt');
     const [isReformatting, setIsReformatting] = useState(false);
+    const [editingArticleId, setEditingArticleId] = useState<string | null>(null);
 
 
     // == STEP 3: UPLOAD STATE ==
@@ -146,6 +147,14 @@ const App: React.FC = () => {
             console.error("Failed to save articles log to localStorage", error);
         }
     }, [articlesLog]);
+
+    useEffect(() => {
+        // If we navigate away from the editing/publishing flow back to the start,
+        // clear any article ID we were tracking to avoid accidental updates.
+        if (step === 1) {
+            setEditingArticleId(null);
+        }
+    }, [step]);
 
 
     // Effect for the daily scheduler
@@ -409,6 +418,7 @@ const App: React.FC = () => {
         setIsGenerating(true);
         setUploadStatus(null);
         setStep(1);
+        setEditingArticleId(null); // Ensure we're not in edit mode
     
         for (let i = 1; i <= articlesToProcess; i++) {
             let currentPhase = 'setup';
@@ -627,6 +637,7 @@ const App: React.FC = () => {
             alert("O código LaTeX para este artigo não foi encontrado. Não é possível recompilar.");
             return;
         }
+        setEditingArticleId(articleToRecompile.id);
         setLatexCode(articleToRecompile.latexCode);
         setCompilationStatus(null);
         setPdfPreviewUrl('');
@@ -1190,14 +1201,35 @@ Este arquivo explica como usar os arquivos \`successful_compilations.json\` e \`
                                         </p>
                                     </div>
                                 );
-                                setArticlesLog(prev => [...prev, {
-                                    id: new Date().toISOString() + Math.random(),
-                                    status: 'published',
-                                    doi: result.doi,
-                                    link: result.zenodoLink,
-                                    title: extractedMetadata.title,
-                                    date: new Date().toISOString()
-                                }]);
+                                
+                                const updatedTitle = extractedMetadata.title || 'Untitled Article';
+
+                                if (editingArticleId) {
+                                    setArticlesLog(prev => prev.map(article => 
+                                        article.id === editingArticleId 
+                                        ? {
+                                            id: article.id,
+                                            status: 'published',
+                                            title: updatedTitle,
+                                            date: new Date().toISOString(),
+                                            doi: result.doi,
+                                            link: result.zenodoLink,
+                                            latexCode: undefined, // No longer needed
+                                            pdfBase64: undefined, // No longer needed
+                                          }
+                                        : article
+                                    ));
+                                } else {
+                                     setArticlesLog(prev => [...prev, {
+                                        id: new Date().toISOString() + Math.random(),
+                                        status: 'published',
+                                        doi: result.doi,
+                                        link: result.zenodoLink,
+                                        title: updatedTitle,
+                                        date: new Date().toISOString()
+                                    }]);
+                                }
+                                setEditingArticleId(null);
                             }}
                             onPublishError={async (message) => {
                                 setIsUploading(false);
@@ -1210,15 +1242,30 @@ Este arquivo explica como usar os arquivos \`successful_compilations.json\` e \`
                                 if (compiledPdfFile && latexCode && extractedMetadata) {
                                     try {
                                         const pdfBase64 = await fileToBase64(compiledPdfFile);
-                                        const newLogEntry: ArticleLogEntry = {
-                                            id: new Date().toISOString() + Math.random(),
-                                            status: 'unpublished',
-                                            title: extractedMetadata.title,
+                                        const updatedTitle = extractedMetadata.title;
+
+                                        const newEntryData = {
+                                            status: 'unpublished' as const,
+                                            title: updatedTitle,
                                             date: new Date().toISOString(),
                                             latexCode: latexCode,
                                             pdfBase64: pdfBase64
                                         };
-                                        setArticlesLog(prev => [...prev, newLogEntry]);
+
+                                        if (editingArticleId) {
+                                            setArticlesLog(prev => prev.map(article => 
+                                                article.id === editingArticleId
+                                                ? { ...article, ...newEntryData }
+                                                : article
+                                            ));
+                                        } else {
+                                            const newLogEntry: ArticleLogEntry = {
+                                                id: new Date().toISOString() + Math.random(),
+                                                ...newEntryData
+                                            };
+                                            setArticlesLog(prev => [...prev, newLogEntry]);
+                                        }
+
                                         setUploadStatus(
                                             <div className="status-message status-error">
                                                 <p>❌ {message}</p>
@@ -1241,6 +1288,7 @@ Este arquivo explica como usar os arquivos \`successful_compilations.json\` e \`
                                          );
                                     }
                                 }
+                                setEditingArticleId(null); // End the editing session
                             }}
                             extractedMetadata={extractedMetadata}
                          />

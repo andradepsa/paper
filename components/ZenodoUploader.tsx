@@ -22,7 +22,7 @@ const ZenodoUploader = forwardRef<ZenodoUploaderRef, ZenodoUploaderProps>(({
     title, abstractText, keywords, authors, compiledPdfFile, onFileSelect, onPublishStart, onPublishSuccess, onPublishError,
     extractedMetadata
 }, ref) => {
-    const [useSandbox, setUseSandbox] = useState(true);
+    const [useSandbox, setUseSandbox] = useState(false);
     const [zenodoToken, setZenodoToken] = useState(''); 
     const [publicationLog, setPublicationLog] = useState<string[]>([]);
     const logContainerRef = useRef<HTMLDivElement>(null);

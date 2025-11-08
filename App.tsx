@@ -103,7 +103,7 @@ const App: React.FC = () => {
         authors: [] as Author[],
         keywords: ''
     });
-    const [useSandbox, setUseSandbox] = useState(true);
+    const [useSandbox, setUseSandbox] = useState(false);
     // Initialize Zenodo token from localStorage
     const [zenodoToken, setZenodoToken] = useState(() => localStorage.getItem('zenodo_api_key') || '');
     const [isUploading, setIsUploading] = useState(false);
@@ -410,6 +410,7 @@ const App: React.FC = () => {
         setStep(1);
     
         for (let i = 1; i <= articlesToProcess; i++) {
+            let currentPhase = 'setup';
             setIsGenerationComplete(false);
             setGenerationProgress(0);
             setAnalysisResults([]);
@@ -423,6 +424,7 @@ const App: React.FC = () => {
                 let currentPaper = '';
                 
                 // 1. Generate Title
+                currentPhase = 'geração de título';
                 setGenerationStatus(`Artigo ${i}/${articlesToProcess}: Gerando um título inovador...`);
                 setGenerationProgress(5);
                 const randomTopic = MATH_TOPICS[Math.floor(Math.random() * MATH_TOPICS.length)];
@@ -430,6 +432,7 @@ const App: React.FC = () => {
                 setGeneratedTitle(temporaryTitle);
     
                 // 2. Generate Initial Paper
+                currentPhase = 'geração inicial do artigo';
                 setGenerationStatus(`Artigo ${i}/${articlesToProcess}: Gerando a primeira versão...`);
                 setGenerationProgress(15);
                 const { paper: initialPaper, sources } = await generateInitialPaper(temporaryTitle, language, pageCount, generationModel);
@@ -439,6 +442,7 @@ const App: React.FC = () => {
                 // 3. Iterative Analysis and Improvement
                 for (let iter = 1; iter <= TOTAL_ITERATIONS; iter++) {
                     if (isGenerationCancelled.current) break;
+                    currentPhase = `análise e melhoria (iteração ${iter})`;
                     const progress = 15 + (iter / TOTAL_ITERATIONS) * 75;
                     setGenerationProgress(progress);
                     setGenerationStatus(`Artigo ${i}/${articlesToProcess}: Iniciando iteração de análise ${iter}/${TOTAL_ITERATIONS}...`);
@@ -478,6 +482,7 @@ const App: React.FC = () => {
                 setFinalLatexCode(finalPaperCode);
                 
                 // === COMPILE LATEX ===
+                currentPhase = 'compilação';
                 setGenerationProgress(95);
                 let compiledFile: File;
                 let finalFixedCode: string;
@@ -496,6 +501,7 @@ const App: React.FC = () => {
                 }
                 
                 // === UPLOAD TO ZENODO ===
+                currentPhase = 'publicação no Zenodo';
                 try {
                     const statusUpdaterForUpload = (message: string) => setGenerationStatus(`Artigo ${i}/${articlesToProcess}: ${message}`);
                     const publishedData = await uploadArticleToZenodo(compiledFile, finalFixedCode, statusUpdaterForUpload);
@@ -531,11 +537,14 @@ const App: React.FC = () => {
     
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : `Ocorreu um erro desconhecido no artigo ${i}.`;
+                const finalMessage = `❌ Erro inesperado no Artigo ${i} durante a fase de '${currentPhase}': ${errorMessage}. A automação foi interrompida.`;
+                
                 if (errorMessage.toLowerCase().includes('quota')) {
-                    setGenerationStatus(`⚠️ Limite de cota da API atingido. A automação foi pausada.`);
+                    setGenerationStatus(`⚠️ Limite de cota da API atingido durante a fase de '${currentPhase}'. A automação foi pausada.`);
                 } else {
-                    setGenerationStatus(`❌ Erro no artigo ${i}: ${errorMessage}. Parando automação.`);
+                    setGenerationStatus(finalMessage);
                 }
+                console.error(`Automation stopped at phase '${currentPhase}' for article ${i}:`, error);
                 setIsGenerating(false);
                 return;
             }

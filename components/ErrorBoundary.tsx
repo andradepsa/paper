@@ -1,4 +1,4 @@
-import React, { Component, ReactNode, ErrorInfo } from 'react';
+import React, { ReactNode, ErrorInfo } from 'react';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -10,12 +10,11 @@ interface ErrorBoundaryState {
   errorInfo: ErrorInfo | null;
 }
 
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // FIX: Replaced the constructor-based state initialization with a class property.
-  // The constructor was causing multiple TypeScript errors where properties
-  // like 'state', 'setState', and 'props' were not found on the component instance.
-  // The class property syntax resolves these typing issues, likely due to the
-  // project's specific build configuration.
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  // FIX: Changed `extends Component` to `extends React.Component` to resolve
+  // type errors where 'setState' and 'props' were not found on the component instance.
+  // This ensures the class correctly inherits from React's Component base class,
+  // avoiding potential import resolution issues in the build environment.
   state: ErrorBoundaryState = {
     hasError: false,
     error: null,

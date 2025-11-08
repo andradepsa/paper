@@ -2,6 +2,7 @@ import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 import type { Language, AnalysisResult, PaperSource, StyleGuide } from '../types';
 import { ANALYSIS_TOPICS, LANGUAGES, FIX_OPTIONS, STYLE_GUIDES } from '../constants';
 import { getCompilationExamplesForPrompt } from './compilationExamples';
+import { LATEX_TEMPLATES } from './latexTemplates';
 
 // Removed the global 'ai' instance. It will now be created on-demand.
 
@@ -187,93 +188,28 @@ export async function generatePaperTitle(topic: string, language: Language, mode
 
 export async function generateInitialPaper(title: string, language: Language, pageCount: number, model: string): Promise<{ paper: string, sources: PaperSource[] }> {
     const languageName = LANGUAGES.find(l => l.code === language)?.name || 'English';
-    const babelLanguage = BABEL_LANG_MAP[language];
 
     let referenceCount = 20;
     if (pageCount === 30) referenceCount = 40;
     else if (pageCount === 60) referenceCount = 60;
     else if (pageCount === 100) referenceCount = 100;
 
-    const examples = getCompilationExamplesForPrompt();
-    const examplesPrompt = formatExamplesForPrompt(examples);
+    const templatesString = LATEX_TEMPLATES.map((template, index) => `--- TEMPLATE ${index + 1} ---\n${template}\n--- END TEMPLATE ${index + 1} ---`).join('\n\n');
 
-    const systemInstruction = `You are a world-class AI assistant specialized in generating high-quality scientific articles in LaTeX format, strictly following the Brazilian ABNT standards (NBR 6022 for articles, NBR 6023 for references).
+    const systemInstruction = `You are a world-class AI assistant specialized in generating high-quality scientific articles by populating pre-defined LaTeX templates.
 
-    **General Formatting Rules (ABNT):**
-    -   **Paper Size:** A4.
-    -   **Margins:** Top and Left: 3cm. Bottom and Right: 2cm.
-    -   **Font:** Times New Roman, 12pt.
-    -   **Line Spacing:** 1.5 for the main text. Single spacing for references.
+    **Your Task:**
+    1.  **Select a Template:** You are provided with 10 high-quality, pre-approved LaTeX templates that are guaranteed to be compliant with ABNT standards for scientific articles (A4 format). You MUST choose ONE of these templates to serve as the structure for the paper.
+    2.  **Generate Content:** Based on the user-provided title, generate a complete, comprehensive, and high-quality scientific paper. This includes a detailed abstract (resumo), keywords (palavras-chave), an introduction, multiple sections with subsections for the main body, a conclusion, and a bibliography. You must use the Google Search tool to find relevant academic sources to create a credible bibliography with **exactly ${referenceCount} entries**.
+    3.  **Populate the Template:** You MUST replace all placeholder text within the selected template (e.g., \`[CONTEÚDO DA INTRODUÇÃO AQUI]\`, \`[ITEM DA BIBLIOGRAFIA 1]\`, \`[TÍTULO DO ARTIGO AQUI]\`) with the content you have generated. Ensure the final document is coherent and flows naturally.
+    4.  **Meet Page Count:** The generated content must be substantial enough to ensure the final rendered PDF is **at least ${pageCount} pages** long.
+    5.  **Strict Output Format:** The ENTIRE output MUST be ONLY the completed LaTeX code. Do not add any explanation, markdown formatting (like \`\`\`latex\`), or any text before \`\\documentclass\` or after \`\\end{document}\`.
 
-    **Output Format & Strict Rules:**
-    1.  **Strictly LaTeX:** The entire output MUST be a single, valid, and complete LaTeX document. Do not include any explanatory text, markdown formatting, or code fences (like \`\`\`latex) before \`\\documentclass\` or after \`\\end{document}\`.
-    2.  **Mandatory Preamble:** The paper must begin with the following preamble, exactly as written. NO other packages are allowed.
-        \`\`\`latex
-        \\documentclass[12pt,a4paper]{article}
-        \\usepackage[utf8]{inputenc}
-        \\usepackage[T1]{fontenc}
-        \\usepackage{times}
-        \\usepackage[${babelLanguage}]{babel}
-        \\usepackage[a4paper, left=3cm, right=2cm, top=3cm, bottom=2cm]{geometry}
-        \\usepackage{amsmath, amssymb, setspace, url, verbatim}
-        \\usepackage{hyperref}
-        \`\`\`
-    3.  **PDF Metadata and Title (Crucial):** Immediately after the preamble, you MUST add both a \`\\hypersetup\` block and a \`\\title{...}\` command.
-        -   The \`\\hypersetup\` block's \`pdftitle\` MUST be exactly: \`pdftitle={${title}}\`.
-        -   The \`\\title\` command MUST be exactly: \`\\title{${title}}\`.
-        -   The \`pdfsubject\` field MUST contain the **full, complete abstract (Resumo)** of the paper, without any LaTeX commands.
-        -   The \`pdfkeywords\` field must contain the keywords, separated by commas.
-        -   The \`pdfauthor\` MUST be exactly "SÉRGIO DE ANDRADE, PAULO".
-
-        **Example of the required block:**
-        \`\`\`latex
-        \\hypersetup{
-          pdftitle={${title}},
-          pdfauthor={SÉRGIO DE ANDRADE, PAULO},
-          pdfsubject={O resumo completo do artigo, em um único parágrafo, vai aqui. Deve ser idêntico ao resumo que aparece visualmente no documento.},
-          pdfkeywords={Palavra-chave1, Palavra-chave2, Palavra-chave3}
-        }
-        \\title{${title}}
-        \`\`\`
-    4.  **Document Start:** The document body must begin with \`\\begin{document}\` followed immediately by \`\\onehalfspacing\`.
-    5.  **Title and Author Block (NO \\maketitle):** You MUST NOT use the \`\\maketitle\` command. Instead, create the title block manually at the very start of the document body, formatted exactly as follows:
-        \`\`\`latex
-        \\begin{center}
-          \\textbf{\\MakeUppercase{${title}}}
-        \\end{center}
-        \\vspace{1.5cm}
-        \\begin{flushright}
-          SÉRGIO DE ANDRADE, PAULO \\\\
-          \\small ORCID: \\url{https://orcid.org/0009-0004-2555-3178}
-        \\end{flushright}
-        \\vspace{1.5cm}
-        \`\`\`
-    6.  **Resumo (Abstract) and Palavras-chave (Keywords):**
-        -   This section MUST begin with an unnumbered, centered section title: \`\\begin{center}\\textbf{RESUMO}\\end{center}\`.
-        -   The abstract text follows, as a single paragraph. It must be identical to the content of the \`pdfsubject\` field.
-        -   After the abstract, insert a blank line, followed by: \`\\noindent\\textbf{Palavras-chave:}\` and then the keywords.
-    7.  **Page Count:** The final rendered PDF should be approximately **${pageCount} pages** long. Adjust the content depth to meet this requirement.
-    8.  **Main Body Sections (Numbered and Uppercase):**
-        -   The main sections of the paper (Introduction, etc.) MUST be created using the \`\\section{}\` command.
-        -   Section titles MUST be in uppercase. For example: \`\\section{INTRODUÇÃO}\`.
-    9.  **Referências (References) Section (Strict Formatting):**
-        -   The final section MUST be the references.
-        -   This section MUST begin with an unnumbered section title: \`\\section*{REFERÊNCIAS}\`.
-        -   You MUST present **exactly ${referenceCount} entries**.
-        -   Each entry MUST be formatted as a plain paragraph, left-aligned, with single line spacing within the entry and a blank line between entries.
-        -   **CRITICAL: The formatting of each reference MUST strictly follow the ABNT NBR 6023 standard.**
-        -   **CRITICAL: Absolutely DO NOT use \`\\begin{thebibliography}\`, \`\\end{thebibliography}\`, \`\\bibitem\`, or any citation management packages/commands. Format the list manually.**
-        -   **Do NOT use the \`\\cite{}\` command anywhere in the text body.**
-        -   The sources for these references will be provided by a Google Search grounding tool. You MUST prioritize their use.
-    10. **Forbidden Elements:** Do not use packages like \`graphicx\`. Do not include images, figures, tables, or use the \`\\newpage\` command.
-
-    **Execution:**
-    -   First, use the Google Search tool results to find high-quality academic sources relevant to the paper's title.
-    -   Then, write the complete LaTeX document according to all the ABNT rules specified above.
-    ${examplesPrompt}
+    **Provided LaTeX Templates:**
+    ${templatesString}
     `;
 
-    const userPrompt = `Generate a scientific paper with the title: "${title}"`;
+    const userPrompt = `Generate a scientific paper in ${languageName} with the title: "${title}". Use one of the provided templates, fill it completely with high-quality content, and ensure the final paper is at least ${pageCount} pages long.`;
 
     const response = await callModel(model, systemInstruction, userPrompt, { googleSearch: true });
     
@@ -304,7 +240,7 @@ export async function analyzePaper(paperContent: string, pageCount: number, mode
     1.  Analyze the paper based on the following 28 quality criteria.
     2.  For each criterion, provide a numeric score from 0.0 to 10.0, where 10.0 is flawless.
     3.  For each criterion, provide a concise, single-sentence improvement suggestion. This suggestion must be a direct critique of the paper's current state and offer a clear path for enhancement. Do NOT write generic praise. Be critical and specific.
-    4.  The "PAGE COUNT COMPLIANCE" topic must be evaluated based on the user's requested page count of ${pageCount}. A perfect score of 10 is achieved if the paper is exactly ${pageCount} pages long. The score should decrease linearly based on the deviation from this target. For example, if the paper is ${pageCount - 2} or ${pageCount + 2} pages, the score might be around 8.0. If it's ${pageCount - 5} or ${pageCount + 5}, the score might be around 5.0.
+    4.  The "PAGE COUNT COMPLIANCE" topic must be evaluated based on the user's requested MINIMUM page count of ${pageCount}. A perfect score of 10.0 is achieved if the paper's estimated length is greater than or equal to ${pageCount} pages. If the paper is shorter than ${pageCount} pages, the score must be low, penalizing it severely. For example, if the paper is ${pageCount - 1} pages, the score should be 5.0 or less. If it is ${pageCount - 2} pages, the score should be 3.0 or less. If the paper is substantially longer than ${pageCount} pages (e.g., ${pageCount + 5}), it should still receive a high score like 9.5 or 10.0.
 
     **Analysis Criteria:**
     ${analysisTopicsList}
@@ -328,9 +264,9 @@ export async function analyzePaper(paperContent: string, pageCount: number, mode
           "improvement": "The discussion section slightly deviates into an unrelated sub-topic that should be removed to maintain focus."
         },
         {
-          "topicName": "WRITING CLARITY",
-          "score": 7.8,
-          "improvement": "Several paragraphs contain run-on sentences that should be split for better readability."
+          "topicName": "PAGE COUNT COMPLIANCE",
+          "score": 4.0,
+          "improvement": "The paper is approximately 10 pages long but needs to be expanded to meet the minimum requirement of 12 pages."
         }
       ]
     }

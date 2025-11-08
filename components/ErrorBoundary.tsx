@@ -11,21 +11,18 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // FIX: Replaced class property state initialization with a constructor.
-  // This resolves type errors where `this.props` and `this.setState` were not
-  // recognized by ensuring the component's `this` context is correctly bound.
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-      errorInfo: null,
-    };
-  }
+  // FIX: Replaced the constructor with class property state initialization for a more modern syntax.
+  // This resolves potential issues with how the component's 'this' context and state are handled,
+  // addressing the errors about missing properties like 'state' and 'props'.
+  public state: ErrorBoundaryState = {
+    hasError: false,
+    error: null,
+    errorInfo: null,
+  };
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     // Update state so the next render will show the fallback UI.
-    return { hasError: true, error: error, errorInfo: null };
+    return { hasError: true, error: error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {

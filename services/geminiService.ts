@@ -257,14 +257,16 @@ export async function generateInitialPaper(title: string, language: Language, pa
         -   Immediately following \`\\section{Referências}\`, you MUST present **exactly ${referenceCount} entries** as a simple, unnumbered list (e.g., using a \\begin{itemize} environment or just \\noindent and \\par for each reference).
         -   **CRITICAL: Absolutely DO NOT use the \`\\begin{thebibliography}\`, \`\\end{thebibliography}\`, or \`\\bibitem\` commands anywhere in the document. The references MUST be formatted as a plain, unnumbered list directly following \`\\section{Referências}\`.**
         -   **Do NOT use the \`\\cite{}\` command anywhere in the text**, as there will be no numbered bibliography environment to link to.
-        -   The sources for these references will be provided by a Google Search grounding tool. You MUST use these sources. Do not invent sources.
+        -   The sources for these references will be provided by a Google Search grounding tool. These are your **primary sources**. You MUST prioritize their use.
+        -   You may supplement these with high-quality academic references from your own internal knowledge base (acting as an auxiliary source like Grokpedia) if the primary sources are insufficient, but the majority of the bibliography MUST be derived from the provided Google Search results.
+        -   Do not invent sources.
         -   **Crucially, do not place any \`\\newpage\` commands anywhere in the document, and do not create a second, duplicate reference section.**
     10. **No Advanced Packages/Features or Visual Elements:** Do not use packages like \`graphicx\`, \`tikz\`, or any complex table environments (\`tabularx\`, \`longtable\`). Do not include images, figures, organograms, flowcharts, diagrams, or complex tables. Use only the packages listed in the mandatory preamble. Using \`graphicx\` is strictly forbidden.
     11. **Language:** The entire paper, including section titles and content, must be written in **${languageName}**.
-    12. **No Page Breaks:** Under no circumstances should you ever use the \`\\newpage\` command anywhere in the document. Let the LaTeX engine handle page breaks automatically. This is a critical instruction.
+    12. **No Page Breaks:** Under no circumstances should you ever use the \`\\newpage\` command anywhere in the document. This is a critical instruction.
 
     **Execution:**
-    -   First, use the Google Search tool to find high-quality academic sources (papers, books, articles) relevant to the paper's title. These will form the basis of your bibliography.
+    -   First, use the Google Search tool results provided to you to find high-quality academic sources (papers, books, articles) relevant to the paper's title. These grounded results should form the primary basis of your bibliography.
     -   Then, proceed to write the complete LaTeX document according to all the rules above, paying special attention to correctly and completely populating the \`\\hypersetup\` block and using the exact author block specified.
     ${examplesPrompt}
     `;

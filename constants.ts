@@ -10,6 +10,7 @@ export const LANGUAGES: LanguageOption[] = [
 export const AVAILABLE_MODELS: {name: string, description: string}[] = [
     { name: 'gemini-2.5-flash', description: 'Fast and efficient for most tasks.' },
     { name: 'gemini-2.5-pro', description: 'More powerful for complex generation and reasoning.' },
+    { name: 'grok-4-latest', description: 'Powerful model from x.ai.' },
 ];
 
 export const STYLE_GUIDES: StyleGuideOption[] = [

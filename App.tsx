@@ -789,6 +789,7 @@ Este arquivo explica como usar os arquivos \`successful_compilations.json\` e \`
                 onSave={(keys) => {
                     if (keys.gemini) localStorage.setItem('gemini_api_key', keys.gemini);
                     if (keys.zenodo) setZenodoToken(keys.zenodo); // This will also save to localStorage via useEffect
+                    if (keys.xai) localStorage.setItem('xai_api_key', keys.xai);
                     setIsApiModalOpen(false);
                 }}
             />

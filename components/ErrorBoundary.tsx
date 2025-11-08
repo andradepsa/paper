@@ -1,6 +1,3 @@
-
-
-
 import React, { Component, ReactNode, ErrorInfo } from 'react';
 
 interface ErrorBoundaryProps {
@@ -14,34 +11,32 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // FIX: Declare 'state' as a class property with its explicit type.
-  // This is a more modern and robust way to initialize state in React class components
-  // and resolves the type inference issues for 'this.state', 'this.props', and 'this.setState'.
-  state: ErrorBoundaryState = {
-    hasError: false,
-    error: null,
-    errorInfo: null,
-  };
+  // FIX: Replaced class property state initialization with a constructor.
+  // This resolves type errors where `this.props` and `this.setState` were not
+  // recognized by ensuring the component's `this` context is correctly bound.
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null,
+      errorInfo: null,
+    };
+  }
 
-  // FIX: Removed 'public' modifier as it's not standard for static methods in React.
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     // Update state so the next render will show the fallback UI.
     return { hasError: true, error: error, errorInfo: null };
   }
 
-  // FIX: Removed 'public' modifier as it's not standard for React lifecycle methods.
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
-    // FIX: 'this.setState' is now correctly recognized due to explicit 'state' declaration.
     this.setState({
       error: error,
       errorInfo: errorInfo,
     });
   }
 
-  // FIX: Removed 'public' modifier as it's not standard for React lifecycle methods.
   render() {
-    // FIX: 'this.state' is now correctly recognized.
     if (this.state.hasError) {
       // You can render any custom fallback UI
       return (
@@ -60,7 +55,6 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       );
     }
 
-    // FIX: 'this.props' is now correctly recognized due to proper class inheritance and state declaration.
     return this.props.children;
   }
 }

@@ -40,7 +40,7 @@ async function withRateLimitHandling<T>(apiCall: () => Promise<T>): Promise<T> {
                  if (errorMessage.includes('503') || errorMessage.includes('overloaded')) {
                     throw new Error("The AI model is temporarily overloaded. Please try again in a few moments.");
                  }
-                throw new Error("Failed to call the Gemini API after multiple attempts. Please check your connection and try again later.");
+                throw new Error("Failed to call the API after multiple attempts. Please check your connection and try again later.");
             }
 
             let backoffTime;
@@ -85,8 +85,89 @@ function formatExamplesForPrompt(examples: { successful: string[], failed: strin
     return promptSection;
 }
 
+// Central dispatcher for different AI models
+async function callModel(
+    model: string,
+    systemInstruction: string,
+    userPrompt: string,
+    config: {
+        jsonOutput?: boolean;
+        responseSchema?: any;
+        googleSearch?: boolean;
+    } = {}
+): Promise<GenerateContentResponse> {
+    if (model.startsWith('gemini-')) {
+        const ai = getAiClient();
+        const apiCall = () => ai.models.generateContent({
+            model: model,
+            contents: userPrompt,
+            config: {
+                systemInstruction: systemInstruction,
+                ...(config.jsonOutput && { responseMimeType: "application/json" }),
+                ...(config.responseSchema && { responseSchema: config.responseSchema }),
+                ...(config.googleSearch && { tools: [{ googleSearch: {} }] }),
+            },
+        });
+        return withRateLimitHandling(apiCall);
+    } else if (model.startsWith('grok-')) {
+        const apiKey = localStorage.getItem('xai_api_key');
+        if (!apiKey) {
+            throw new Error("x.ai API key not found. Please set it in the settings modal (gear icon).");
+        }
+
+        const messages = [
+            { role: 'system', content: systemInstruction },
+            { role: 'user', content: userPrompt }
+        ];
+
+        const apiCall = async () => {
+            const response = await fetch('https://api.x.ai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: model,
+                    messages: messages,
+                    stream: false,
+                    temperature: 0,
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`x.ai API Error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+            }
+
+            const data = await response.json();
+            const text = data.choices?.[0]?.message?.content || '';
+            
+            // Reconstruct a Gemini-like response object for compatibility
+            const reconstructedResponse = {
+                candidates: [{
+                    content: { parts: [{ text: text }], role: 'model' },
+                    finishReason: 'STOP',
+                    index: 0,
+                    safetyRatings: [],
+                    groundingMetadata: { groundingChunks: [] } // Grok does not support grounding
+                }],
+                functionCalls: [],
+                get text() {
+                    return this.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
+                }
+            };
+            return reconstructedResponse as GenerateContentResponse;
+        };
+
+        return withRateLimitHandling(apiCall);
+    } else {
+        throw new Error(`Unsupported model: ${model}`);
+    }
+}
+
+
 export async function generatePaperTitle(topic: string, language: Language, model: string): Promise<string> {
-    const ai = getAiClient(); // Get client with the latest key
     const languageName = LANGUAGES.find(l => l.code === language)?.name || 'English';
 
     const systemInstruction = `You are an expert mathematician and academic researcher with deep knowledge across all fields of mathematics. Your task is to generate a single, compelling, and high-impact title for a scientific paper.`;
@@ -99,21 +180,12 @@ export async function generatePaperTitle(topic: string, language: Language, mode
     - It must be written in **${languageName}**.
     - Your entire response MUST be only the title itself. Do not include quotation marks, labels like "Title:", or any other explanatory text.`;
 
-    const apiCall = () => ai.models.generateContent({
-        model: model,
-        contents: userPrompt,
-        config: {
-            systemInstruction,
-        },
-    });
-
-    const response = await withRateLimitHandling<GenerateContentResponse>(apiCall);
+    const response = await callModel(model, systemInstruction, userPrompt);
     return response.text.trim().replace(/"/g, ''); // Clean up any accidental quotes
 }
 
 
 export async function generateInitialPaper(title: string, language: Language, pageCount: number, model: string): Promise<{ paper: string, sources: PaperSource[] }> {
-    const ai = getAiClient(); // Get client with the latest key
     const languageName = LANGUAGES.find(l => l.code === language)?.name || 'English';
     const babelLanguage = BABEL_LANG_MAP[language];
 
@@ -197,18 +269,10 @@ export async function generateInitialPaper(title: string, language: Language, pa
     ${examplesPrompt}
     `;
 
-    const apiCall = () => ai.models.generateContent({
-        model: model,
-        contents: `Generate a scientific paper with the title: "${title}"`,
-        config: {
-            systemInstruction: systemInstruction,
-            tools: [{ googleSearch: {} }],
-        },
-    });
+    const userPrompt = `Generate a scientific paper with the title: "${title}"`;
+
+    const response = await callModel(model, systemInstruction, userPrompt, { googleSearch: true });
     
-    // Fix for errors on lines 111 and 113.
-    // Explicitly type the API call response to ensure `response` is not `unknown`.
-    const response = await withRateLimitHandling<GenerateContentResponse>(apiCall);
     let paper = response.text.trim().replace(/^```latex\s*|```\s*$/g, '');
     
     // Ensure the paper ends with \end{document}
@@ -227,7 +291,6 @@ export async function generateInitialPaper(title: string, language: Language, pa
 }
 
 export async function analyzePaper(paperContent: string, pageCount: number, model: string): Promise<AnalysisResult> {
-    const ai = getAiClient(); // Get client with the latest key
     const analysisTopicsList = ANALYSIS_TOPICS.map(t => `- ${t.name}: ${t.desc}`).join('\n');
     const systemInstruction = `You are an expert academic reviewer AI. Your task is to perform a rigorous, objective, and multi-faceted analysis of a provided scientific paper written in LaTeX.
 
@@ -269,45 +332,36 @@ export async function analyzePaper(paperContent: string, pageCount: number, mode
     }
     \`\`\`
     `;
-
-    const apiCall = () => ai.models.generateContent({
-        model: model,
-        contents: paperContent,
-        config: {
-            systemInstruction,
-            responseMimeType: "application/json",
-            responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                    analysis: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                topicName: { type: Type.STRING },
-                                score: { type: Type.NUMBER },
-                                improvement: { type: Type.STRING },
-                            },
-                            required: ["topicName", "score", "improvement"],
-                        },
+    
+    const responseSchema = {
+        type: Type.OBJECT,
+        properties: {
+            analysis: {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        topicName: { type: Type.STRING },
+                        score: { type: Type.NUMBER },
+                        improvement: { type: Type.STRING },
                     },
+                    required: ["topicName", "score", "improvement"],
                 },
-                required: ["analysis"],
             },
         },
-    });
+        required: ["analysis"],
+    };
 
-    // Fix for error on line 196.
-    // Explicitly type the API call response to ensure `response` is not `unknown`.
-    const response = await withRateLimitHandling<GenerateContentResponse>(apiCall);
+    const response = await callModel(model, systemInstruction, paperContent, {
+        jsonOutput: true,
+        responseSchema: responseSchema
+    });
     
     try {
         const jsonText = response.text.trim().replace(/^```json\s*|```\s*$/g, '');
         const result = JSON.parse(jsonText);
         return result as AnalysisResult;
     } catch (error) {
-        // Fix for error on line 200.
-        // The `response` object is now correctly typed, so `response.text` is accessible here.
         console.error("Failed to parse analysis JSON:", response.text);
         throw new Error("The analysis returned an invalid format. Please try again.");
     }
@@ -315,7 +369,6 @@ export async function analyzePaper(paperContent: string, pageCount: number, mode
 
 
 export async function improvePaper(paperContent: string, analysis: AnalysisResult, language: Language, model: string): Promise<string> {
-    const ai = getAiClient(); // Get client with the latest key
     const languageName = LANGUAGES.find(l => l.code === language)?.name || 'English';
     const improvementPoints = analysis.analysis
         .filter(item => item.score < 8.5)
@@ -344,15 +397,7 @@ export async function improvePaper(paperContent: string, analysis: AnalysisResul
 
     const userPrompt = `Current Paper Content:\n\n${paperContent}\n\nImprovement Points:\n\n${improvementPoints}\n\nBased on the above improvement points, provide the complete, improved LaTeX source code for the paper.`;
 
-    const apiCall = () => ai.models.generateContent({
-        model: model,
-        contents: userPrompt,
-        config: {
-            systemInstruction: systemInstruction,
-        },
-    });
-
-    const response = await withRateLimitHandling<GenerateContentResponse>(apiCall);
+    const response = await callModel(model, systemInstruction, userPrompt);
     let paper = response.text.trim().replace(/^```latex\s*|```\s*$/g, '');
 
     // Ensure the paper ends with \end{document}
@@ -364,7 +409,6 @@ export async function improvePaper(paperContent: string, analysis: AnalysisResul
 }
 
 export async function fixLatexPaper(paperContent: string, fixesToApply: { key: string; label: string; description: string }[], model: string): Promise<string> {
-    const ai = getAiClient(); // Get client with the latest key
     const fixInstructions = fixesToApply.map(fix => `**${fix.label}**: ${fix.description}`).join('\n- ');
 
     const examples = getCompilationExamplesForPrompt();
@@ -388,15 +432,7 @@ export async function fixLatexPaper(paperContent: string, fixesToApply: { key: s
 
     const userPrompt = `Current LaTeX Paper:\n\n${paperContent}\n\nApply the specified fixes and provide the complete, corrected LaTeX source code.`;
 
-    const apiCall = () => ai.models.generateContent({
-        model: model,
-        contents: userPrompt,
-        config: {
-            systemInstruction,
-        },
-    });
-
-    const response = await withRateLimitHandling<GenerateContentResponse>(apiCall);
+    const response = await callModel(model, systemInstruction, userPrompt);
     let paper = response.text.trim().replace(/^```latex\s*|```\s*$/g, '');
     
     // Ensure the paper ends with \end{document}
@@ -408,7 +444,6 @@ export async function fixLatexPaper(paperContent: string, fixesToApply: { key: s
 }
 
 export async function reformatPaperWithStyleGuide(paperContent: string, styleGuide: StyleGuide, model: string): Promise<string> {
-    const ai = getAiClient();
     const styleGuideInfo = STYLE_GUIDES.find(g => g.key === styleGuide);
     if (!styleGuideInfo) {
         throw new Error(`Unknown style guide: ${styleGuide}`);
@@ -433,15 +468,7 @@ export async function reformatPaperWithStyleGuide(paperContent: string, styleGui
     \`\`\`
     `;
 
-    const apiCall = () => ai.models.generateContent({
-        model: model,
-        contents: userPrompt,
-        config: {
-            systemInstruction,
-        },
-    });
-    
-    const response = await withRateLimitHandling<GenerateContentResponse>(apiCall);
+    const response = await callModel(model, systemInstruction, userPrompt);
     let paper = response.text.trim().replace(/^```latex\s*|```\s*$/g, '');
 
     // Ensure the paper ends with \end{document}

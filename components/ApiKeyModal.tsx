@@ -3,24 +3,26 @@ import React, { useState, useEffect } from 'react';
 interface ApiKeyModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (keys: { gemini: string, zenodo: string }) => void;
+    onSave: (keys: { gemini: string, zenodo: string, xai: string }) => void;
 }
 
 const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onSave }) => {
     const [geminiKey, setGeminiKey] = useState('');
     const [zenodoKey, setZenodoKey] = useState('');
+    const [xaiKey, setXaiKey] = useState('');
 
     useEffect(() => {
         if (isOpen) {
             setGeminiKey(localStorage.getItem('gemini_api_key') || '');
             setZenodoKey(localStorage.getItem('zenodo_api_key') || '');
+            setXaiKey(localStorage.getItem('xai_api_key') || '');
         }
     }, [isOpen]);
 
     if (!isOpen) return null;
 
     const handleSave = () => {
-        onSave({ gemini: geminiKey, zenodo: zenodoKey });
+        onSave({ gemini: geminiKey, zenodo: zenodoKey, xai: xaiKey });
     };
 
     return (
@@ -50,6 +52,33 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onSave }) =>
                             placeholder="Enter your Gemini API Key"
                             className="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                         />
+                    </div>
+                     <div>
+                        <label htmlFor="xai-key" className="block text-sm font-medium text-gray-700 mb-1">
+                           🤖 x.ai (Grok) API Key
+                        </label>
+                        <input
+                            id="xai-key"
+                            type="password"
+                            value={xaiKey}
+                            onChange={(e) => setXaiKey(e.target.value)}
+                            placeholder="Enter your x.ai API Key"
+                            className="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                        <details className="text-xs text-gray-500 mt-1 cursor-pointer">
+                            <summary>API Request Example (cURL)</summary>
+                            <pre className="bg-gray-100 p-2 rounded mt-1 text-xs overflow-x-auto">
+                                <code>
+                                    {`curl https://api.x.ai/v1/chat/completions \\
+-H "Content-Type: application/json" \\
+-H "Authorization: Bearer YOUR_API_KEY" \\
+-d '{
+  "messages": [{"role": "user", "content": "..."}],
+  "model": "grok-4-latest"
+}'`}
+                                </code>
+                            </pre>
+                        </details>
                     </div>
                     <div>
                         <label htmlFor="zenodo-key" className="block text-sm font-medium text-gray-700 mb-1">

@@ -381,13 +381,20 @@ export async function improvePaper(paperContent: string, analysis: AnalysisResul
 
     const examples = getCompilationExamplesForPrompt();
     const examplesPrompt = formatExamplesForPrompt(examples);
+    
+    const titleMatch = paperContent.match(/\\title\{([^}]+)\}/);
+    const originalTitle = titleMatch ? titleMatch[1] : 'the original title';
 
     const systemInstruction = `You are a world-class AI assistant specialized in editing and improving scientific papers written in LaTeX. Your task is to refine the provided LaTeX paper based on specific improvement suggestions, while strictly maintaining the ABNT formatting standard.
+
+    **Critical Preservation Rules:**
+    1.  **Do Not Change Preamble/Metadata:** The entire block from \`\\documentclass\` to \`\\title{...}\` MUST be preserved exactly as in the original. This includes the \`\\hypersetup\` block and the title command, which must be \`\\title{${originalTitle}}\`.
+    2.  **Do Not Use \\maketitle:** The manual title block inside \`\\begin{document}\` must be preserved. Do NOT use the \`\\maketitle\` command.
+    3.  **Preserve Structure:** The overall ABNT LaTeX structure must be maintained: uppercase section titles, unnumbered abstract and references sections, etc.
 
     **Instructions for Improvement:**
     -   Critically analyze the provided "Current Paper Content" against the "Improvement Points".
     -   Apply the necessary changes directly to the LaTeX source code to address each improvement point.
-    -   Maintain the exact ABNT LaTeX structure from the original: preamble, manual title block, metadata, uppercase section titles, etc. Do NOT change \\documentclass, \\usepackage, or \\hypersetup. Do NOT reintroduce the \\maketitle command.
     -   The entire output MUST be a single, valid, and complete LaTeX document. Do not include any explanatory text, markdown formatting, or code fences (like \`\`\`latex) before \`\\documentclass\` or after \`\\end{document}\`.
     -   The language of the entire paper must remain in **${languageName}**.
     -   **CRITICAL: The reference section MUST remain unnumbered (\`\\section*{REFERÊNCIAS}\`) and formatted according to ABNT NBR 6023. Do NOT use \`\\begin{thebibliography}\`, \`\\end{thebibliography}\`, \`\\bibitem\`, or \`\\cite{}\` commands.**
@@ -397,7 +404,7 @@ export async function improvePaper(paperContent: string, analysis: AnalysisResul
     ${examplesPrompt}
     `;
 
-    const userPrompt = `Current Paper Content:\n\n${paperContent}\n\nImprovement Points:\n\n${improvementPoints}\n\nBased on the above improvement points, provide the complete, improved LaTeX source code for the paper, ensuring all ABNT formatting is preserved.`;
+    const userPrompt = `Current Paper Content:\n\n${paperContent}\n\nImprovement Points:\n\n${improvementPoints}\n\nBased on the above improvement points, provide the complete, improved LaTeX source code for the paper, ensuring all ABNT formatting and metadata are preserved.`;
 
     const response = await callModel(model, systemInstruction, userPrompt);
     let paper = response.text.trim().replace(/^```latex\s*|```\s*$/g, '');
@@ -415,15 +422,22 @@ export async function fixLatexPaper(paperContent: string, fixesToApply: { key: s
 
     const examples = getCompilationExamplesForPrompt();
     const examplesPrompt = formatExamplesForPrompt(examples);
+    
+    const titleMatch = paperContent.match(/\\title\{([^}]+)\}/);
+    const originalTitle = titleMatch ? titleMatch[1] : 'the original title';
 
     const systemInstruction = `You are an expert LaTeX editor AI. Your task is to fix common compilation issues in a given LaTeX document, while strictly preserving its ABNT formatting.
+
+    **Critical Preservation Rules:**
+    1.  **Do Not Change Preamble/Metadata:** The entire block from \`\\documentclass\` to \`\\title{...}\` MUST be preserved exactly as in the original. This includes the \`\\hypersetup\` block and the title command, which must be \`\\title{${originalTitle}}\`.
+    2.  **Do Not Use \\maketitle:** The manual title block inside \`\\begin{document}\` must be preserved. Do NOT use the \`\\maketitle\` command.
+    3.  **Preserve Structure:** The overall ABNT LaTeX structure must be maintained.
 
     **Instructions for Fixing:**
     -   You will receive the full LaTeX source code of a paper.
     -   You MUST apply the following specific fixes to the document:
         -   ${fixInstructions}
     -   The entire output MUST be a single, valid, and complete LaTeX document. Do not include any explanatory text, markdown formatting, or code fences.
-    -   Maintain the exact ABNT LaTeX structure from the original: preamble, manual title block, metadata, etc. Do NOT change \\documentclass, \\usepackage, or \\hypersetup. Do NOT reintroduce the \\maketitle command.
     -   **CRITICAL: The reference section MUST remain unnumbered (\`\\section*{REFERÊNCIAS}\`) and formatted according to ABNT NBR 6023. Do NOT use \`\\begin{thebibliography}\`, \`\\end{thebibliography}\`, \`\\bibitem\`, or \`\\cite{}\` commands.**
     -   **Do NOT add or remove \`\\newpage\` commands.**
     -   **Do NOT include any images, figures, or complex tables.**
@@ -431,7 +445,7 @@ export async function fixLatexPaper(paperContent: string, fixesToApply: { key: s
     ${examplesPrompt}
     `;
 
-    const userPrompt = `Current LaTeX Paper:\n\n${paperContent}\n\nApply the specified fixes and provide the complete, corrected LaTeX source code, ensuring all ABNT formatting is preserved.`;
+    const userPrompt = `Current LaTeX Paper:\n\n${paperContent}\n\nApply the specified fixes and provide the complete, corrected LaTeX source code, ensuring all ABNT formatting and metadata are preserved.`;
 
     const response = await callModel(model, systemInstruction, userPrompt);
     let paper = response.text.trim().replace(/^```latex\s*|```\s*$/g, '');

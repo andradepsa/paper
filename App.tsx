@@ -968,7 +968,7 @@ Este arquivo explica como usar os arquivos \`successful_compilations.json\` e \`
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-8">
                         <h2 className="text-2xl font-bold text-gray-800 mb-4">Corrigir LaTeX com IA</h2>
                         <p className="text-gray-600 mb-2">Artigo: <span className="font-semibold">{articleForRecompilation.title}</span></p>
-                        <p className="text-gray-600 mb-6">Descreva o erro de compilação ou dê uma instrução para a IA corrigir o código LaTeX. Por exemplo: "Havia um erro de 'missing &#125;' no abstract, encontre e corrija."</p>
+                        <p className="text-gray-600 mb-6">Descreva o erro de compilação ou dê uma instrução para a IA corrigir o código LaTeX. Por exemplo: "Havia um erro de 'missing }' no abstract, encontre e corrija."</p>
 
                         <div className="space-y-4">
                             <label htmlFor="recompile-prompt" className="font-semibold block">Comando de Correção:</label>

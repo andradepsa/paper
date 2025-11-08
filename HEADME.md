@@ -8,7 +8,7 @@ Abstract:
 
 The Advanced Scientific Paper Generator is a sophisticated, AI-powered web application that fully automates the scientific publication workflow. Built on Google's powerful Gemini models, this tool seamlessly guides users from initial concept to a published paper with a registered DOI. The process starts by generating a compelling, high-impact research title from a selected topic. It then composes a complete, multi-page scientific paper in valid LaTeX, featuring an abstract, introduction, methodology, results, discussion, conclusion, and a bibliography grounded with real-world sources via Google Search.
 
-The application's core strength lies in its rigorous, multi-iteration quality assurance system. Each draft undergoes a comprehensive evaluation against 29 distinct academic and technical metrics. The AI then intelligently refines the LaTeX source code to correct flaws and elevate the paper's quality, ensuring high standards of academic integrity. Finally, the polished LaTeX is compiled into a PDF and can be published directly to Zenodo through its API, completing a fully automated research-to-publication pipeline.
+The application's core strength lies in its rigorous, multi-iteration quality assurance system. Each draft undergoes a comprehensive evaluation against 28 distinct academic and technical metrics. The AI then intelligently refines the LaTeX source code to correct flaws and elevate the paper's quality, ensuring high standards of academic integrity. Finally, the polished LaTeX is compiled into a PDF and can be published directly to Zenodo through its API, completing a fully automated research-to-publication pipeline.
 
 Instructions for Reuse and Customization:
 

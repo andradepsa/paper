@@ -19,8 +19,7 @@ interface ZenodoDeposition {
     }
 }
 
-// Fix: Changed `body` parameter type from `object` to `string` to correctly handle JSON string payloads.
-async function apiRequest<T>(url: string, method: string, token: string, body?: string | Buffer, headers?: Record<string, string>): Promise<T> {
+async function apiRequest<T>(url: string, method: string, token: string, body?: object | Buffer, headers?: Record<string, string>): Promise<T> {
     const options: https.RequestOptions = {
         method,
         headers: {

@@ -299,7 +299,7 @@ export async function analyzePaper(paperContent: string, pageCount: number, mode
     **Input:** You will receive the full LaTeX source code of a scientific paper.
     
     **Task:**
-    1.  Analyze the paper based on the following 29 quality criteria.
+    1.  Analyze the paper based on the following 28 quality criteria.
     2.  For each criterion, provide a numeric score from 0.0 to 10.0, where 10.0 is flawless.
     3.  For each criterion, provide a concise, single-sentence improvement suggestion. This suggestion must be a direct critique of the paper's current state and offer a clear path for enhancement. Do NOT write generic praise. Be critical and specific.
     4.  The "PAGE COUNT COMPLIANCE" topic must be evaluated based on the user's requested page count of ${pageCount}. A perfect score of 10 is achieved if the paper is exactly ${pageCount} pages long. The score should decrease linearly based on the deviation from this target. For example, if the paper is ${pageCount - 2} or ${pageCount + 2} pages, the score might be around 8.0. If it's ${pageCount - 5} or ${pageCount + 5}, the score might be around 5.0.

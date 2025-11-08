@@ -615,6 +615,12 @@ const App: React.FC = () => {
             setRepublishingId(null);
         }
     };
+
+    const handleDeleteArticle = (idToDelete: string) => {
+        if (window.confirm('Tem certeza que deseja excluir este artigo do log? Esta ação não pode ser desfeita.')) {
+            setArticlesLog(prevLog => prevLog.filter(article => article.id !== idToDelete));
+        }
+    };
     
     const handleRecompile = (articleToRecompile: ArticleLogEntry) => {
         if (!articleToRecompile.latexCode) {
@@ -1295,30 +1301,39 @@ Este arquivo explica como usar os arquivos \`successful_compilations.json\` e \`
                                             )}
                                         </td>
                                         <td className="py-3 px-4">
-                                            {article.status === 'unpublished' && (
+                                            <div className="flex items-center gap-2">
+                                                {article.status === 'unpublished' && (
+                                                    <button
+                                                        onClick={() => handleRepublish(article)}
+                                                        disabled={republishingId === article.id}
+                                                        className="btn btn-primary text-sm py-1 px-3"
+                                                    >
+                                                        {republishingId === article.id ? (
+                                                            <>
+                                                                <span className="spinner !w-4 !h-4"></span>
+                                                                Publicando...
+                                                            </>
+                                                        ) : (
+                                                            'Publicar'
+                                                        )}
+                                                    </button>
+                                                )}
+                                                {article.status === 'compilation-failed' && (
+                                                    <button
+                                                        onClick={() => handleRecompile(article)}
+                                                        className="btn btn-primary text-sm py-1 px-3"
+                                                    >
+                                                        Recompilar
+                                                    </button>
+                                                )}
                                                 <button
-                                                    onClick={() => handleRepublish(article)}
-                                                    disabled={republishingId === article.id}
-                                                    className="btn btn-primary text-sm py-1 px-3"
+                                                    onClick={() => handleDeleteArticle(article.id)}
+                                                    className="btn bg-red-600 hover:bg-red-700 text-white text-sm py-1 px-3"
+                                                    title="Excluir este item permanentemente"
                                                 >
-                                                    {republishingId === article.id ? (
-                                                        <>
-                                                            <span className="spinner !w-4 !h-4"></span>
-                                                            Publicando...
-                                                        </>
-                                                    ) : (
-                                                        'Publicar'
-                                                    )}
+                                                    Excluir
                                                 </button>
-                                            )}
-                                            {article.status === 'compilation-failed' && (
-                                                <button
-                                                    onClick={() => handleRecompile(article)}
-                                                    className="btn btn-primary text-sm py-1 px-3"
-                                                >
-                                                    Recompilar
-                                                </button>
-                                            )}
+                                            </div>
                                         </td>
                                     </tr>
                                 )) : (

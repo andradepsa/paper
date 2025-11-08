@@ -410,7 +410,9 @@ export async function improvePaper(paperContent: string, analysis: AnalysisResul
     return paper;
 }
 
-export async function fixLatexPaper(paperContent: string, fixesToApply: { key: string; label: string; description: string }[], model: string, manualInstruction?: string): Promise<string> {
+export async function fixLatexPaper(paperContent: string, fixesToApply: { key: string; label: string; description: string }[], model: string): Promise<string> {
+    const fixInstructions = fixesToApply.map(fix => `**${fix.label}**: ${fix.description}`).join('\n- ');
+
     const examples = getCompilationExamplesForPrompt();
     const examplesPrompt = formatExamplesForPrompt(examples);
 
@@ -418,7 +420,8 @@ export async function fixLatexPaper(paperContent: string, fixesToApply: { key: s
 
     **Instructions for Fixing:**
     -   You will receive the full LaTeX source code of a paper.
-    -   You must analyze the code and apply corrections based on the user's request.
+    -   You MUST apply the following specific fixes to the document:
+        -   ${fixInstructions}
     -   The entire output MUST be a single, valid, and complete LaTeX document. Do not include any explanatory text, markdown formatting, or code fences (like \`\`\`latex) before \`\\documentclass\` or after \`\\end{document}\`.
     -   Maintain the exact LaTeX preamble, author information, title, and metadata structure as in the original. Do NOT change \\documentclass, \\usepackage, \\hypersetup, \\title, \\author, \\date, \\maketitle.
     -   **CRITICAL: Absolutely DO NOT use the \`\\begin{thebibliography}\`, \`\\end{thebibliography}\`, or \`\\bibitem\` commands anywhere in the document. The references MUST be formatted as a plain, unnumbered list directly following \`\\section{Referências}\`.**
@@ -429,18 +432,7 @@ export async function fixLatexPaper(paperContent: string, fixesToApply: { key: s
     ${examplesPrompt}
     `;
 
-    let userPrompt = `Current LaTeX Paper:\n\n${paperContent}\n\n`;
-
-    if (fixesToApply.length > 0) {
-        const fixInstructions = fixesToApply.map(fix => `**${fix.label}**: ${fix.description}`).join('\n- ');
-        userPrompt += `First, apply the following general fixes if applicable:\n- ${fixInstructions}\n\n`;
-    }
-
-    if (manualInstruction) {
-        userPrompt += `Next, and most importantly, apply this specific correction based on the user's feedback. This instruction has the highest priority:\n\n"${manualInstruction}"\n\n`;
-    }
-
-    userPrompt += `Provide the complete, corrected LaTeX source code as your final output.`;
+    const userPrompt = `Current LaTeX Paper:\n\n${paperContent}\n\nApply the specified fixes and provide the complete, corrected LaTeX source code.`;
 
     const response = await callModel(model, systemInstruction, userPrompt);
     let paper = response.text.trim().replace(/^```latex\s*|```\s*$/g, '');

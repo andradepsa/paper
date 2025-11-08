@@ -26,12 +26,19 @@ type Author = {
     orcid: string;
 };
 
-type PublishedArticle = {
-    doi: string;
-    link: string;
+type ArticleLogEntry = {
+    id: string;
+    status: 'published' | 'unpublished';
     title: string;
-    date: string; // Added date
+    date: string;
+    // For published
+    doi?: string;
+    link?: string;
+    // For unpublished
+    latexCode?: string;
+    pdfBase64?: string;
 };
+
 
 // Main App Component
 const App: React.FC = () => {
@@ -55,10 +62,24 @@ const App: React.FC = () => {
     const [isGenerationComplete, setIsGenerationComplete] = useState(false);
     const isGenerationCancelled = useRef(false);
     const [numberOfArticles, setNumberOfArticles] = useState(1);
-     const [publishedArticles, setPublishedArticles] = useState<PublishedArticle[]>(() => {
+    const [articlesLog, setArticlesLog] = useState<ArticleLogEntry[]>(() => {
         try {
             const stored = localStorage.getItem('published_articles_log');
-            return stored ? JSON.parse(stored) : [];
+            const parsed = stored ? JSON.parse(stored) : [];
+            // Migration logic for old format to new ArticleLogEntry format
+            return parsed.map((item: any) => {
+                if (!item.status) { // Old format detected
+                    return {
+                        id: item.doi + Math.random(), // Use DOI + random for a pseudo-ID
+                        status: 'published',
+                        title: item.title,
+                        date: item.date,
+                        doi: item.doi,
+                        link: item.link,
+                    };
+                }
+                return item; // Already new format
+            });
         } catch {
             return [];
         }
@@ -82,12 +103,13 @@ const App: React.FC = () => {
         authors: [] as Author[],
         keywords: ''
     });
-    const [useSandbox, setUseSandbox] = useState(false);
+    const [useSandbox, setUseSandbox] = useState(true);
     // Initialize Zenodo token from localStorage
     const [zenodoToken, setZenodoToken] = useState(() => localStorage.getItem('zenodo_api_key') || '');
     const [isUploading, setIsUploading] = useState(false);
     const [uploadStatus, setUploadStatus] = useState<React.ReactNode>(null);
     const [keywordsInput, setKeywordsInput] = useState('');
+    const [republishingId, setRepublishingId] = useState<string | null>(null);
     
     // == SCHEDULER STATE ==
     const [isSchedulerActive, setIsSchedulerActive] = useState(() => {
@@ -115,14 +137,14 @@ const App: React.FC = () => {
         }
     }, [zenodoToken]);
 
-    // Effect to save published articles to localStorage
+    // Effect to save articles log to localStorage
     useEffect(() => {
         try {
-            localStorage.setItem('published_articles_log', JSON.stringify(publishedArticles));
+            localStorage.setItem('published_articles_log', JSON.stringify(articlesLog));
         } catch (error) {
-            console.error("Failed to save published articles to localStorage", error);
+            console.error("Failed to save articles log to localStorage", error);
         }
-    }, [publishedArticles]);
+    }, [articlesLog]);
 
 
     // Effect for the daily scheduler
@@ -267,13 +289,114 @@ const App: React.FC = () => {
             throw error; // Re-throw the error to be handled by the calling function
         }
     };
+    
+    // File utility helpers
+    const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve((reader.result as string).split(',')[1]);
+        reader.onerror = error => reject(error);
+    });
+
+    const base64ToFile = (base64: string, filename: string, mimeType: string = 'application/pdf'): File => {
+        const byteCharacters = atob(base64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: mimeType });
+        return new File([blob], filename, { type: mimeType });
+    };
+
+    // Refactored upload logic
+    const uploadArticleToZenodo = async (
+        compiledFile: File, 
+        articleLatexCode: string, 
+        statusUpdater: (message: string) => void
+    ) => {
+        const storedToken = localStorage.getItem('zenodo_api_key') || zenodoToken;
+        if (!storedToken) {
+            throw new Error("Token Zenodo não encontrado. Configure-o nas definições.");
+        }
+        
+        statusUpdater("Publicando no Zenodo...");
+        const metadataForUpload = extractMetadata(articleLatexCode, true);
+        const keywordsForUpload = articleLatexCode.match(/\\keywords\{([^}]+)\}/)?.[1] || '';
+
+        const MAX_UPLOAD_RETRIES = 10;
+        for (let attempt = 1; attempt <= MAX_UPLOAD_RETRIES; attempt++) {
+            try {
+                const baseUrl = useSandbox ? 'https://sandbox.zenodo.org/api' : 'https://zenodo.org/api';
+                
+                const createResponse = await fetch(`${baseUrl}/deposit/depositions`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${storedToken}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                if (!createResponse.ok) throw new Error(`Erro ${createResponse.status}: Falha ao criar depósito.`);
+                const deposit = await createResponse.json();
+
+                const formData = new FormData();
+                formData.append('file', compiledFile, 'paper.pdf');
+                const uploadResponse = await fetch(`${baseUrl}/deposit/depositions/${deposit.id}/files`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${storedToken}` },
+                    body: formData
+                });
+                if (!uploadResponse.ok) throw new Error('Falha no upload do PDF');
+
+                const keywordsArray = keywordsForUpload.split(',').map(k => k.trim()).filter(k => k);
+                const metadataPayload = {
+                    metadata: {
+                        title: metadataForUpload.title,
+                        upload_type: 'publication',
+                        publication_type: 'article',
+                        description: metadataForUpload.abstract,
+                        creators: metadataForUpload.authors.filter(a => a.name).map(a => ({
+                            name: a.name,
+                            orcid: a.orcid || undefined
+                        })),
+                        keywords: keywordsArray.length > 0 ? keywordsArray : undefined
+                    }
+                };
+                const metadataResponse = await fetch(`${baseUrl}/deposit/depositions/${deposit.id}`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${storedToken}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(metadataPayload)
+                });
+                if (!metadataResponse.ok) throw new Error('Falha ao atualizar metadados');
+
+                const publishResponse = await fetch(`${baseUrl}/deposit/depositions/${deposit.id}/actions/publish`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${storedToken}` }
+                });
+                if (!publishResponse.ok) throw new Error('Falha ao publicar');
+                const published = await publishResponse.json();
+
+                const zenodoLink = useSandbox ? `https://sandbox.zenodo.org/records/${deposit.id}` : `https://zenodo.org/records/${deposit.id}`;
+                return { 
+                    doi: published.doi, 
+                    link: zenodoLink, 
+                    title: metadataForUpload.title
+                }; // SUCCESS!
+
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : `Tentativa ${attempt} falhou.`;
+                if (attempt === MAX_UPLOAD_RETRIES) {
+                    throw new Error(`Falha ao enviar para o Zenodo após ${MAX_UPLOAD_RETRIES} tentativas. Erro final: ${errorMessage}`);
+                }
+                const delayTime = 15000 + (5000 * (attempt - 1));
+                statusUpdater(`❌ ${errorMessage} Aguardando ${delayTime / 1000}s para tentar novamente...`);
+                await new Promise(resolve => setTimeout(resolve, delayTime));
+            }
+        }
+        throw new Error("Não foi possível publicar no Zenodo após todas as tentativas.");
+    };
 
     const handleFullAutomation = async (articlesToGenerate?: number) => {
-        console.log(`[DEBUG] handleFullAutomation called. articlesToGenerate: ${articlesToGenerate}, numberOfArticles state: ${numberOfArticles}`);
         const articlesToProcess = articlesToGenerate ?? numberOfArticles;
-        console.log(`[DEBUG] Articles to process in this run: ${articlesToProcess}`);
 
-        // PRE-FLIGHT CHECK FOR ZENODO TOKEN
         const storedToken = localStorage.getItem('zenodo_api_key');
         if (!storedToken) {
             alert('❌ Token Zenodo não encontrado! Por favor, configure-o nas definições (ícone de engrenagem) antes de iniciar o processo automático.');
@@ -281,17 +404,12 @@ const App: React.FC = () => {
         }
         setZenodoToken(storedToken);
     
-        // Reset states for the whole batch
         isGenerationCancelled.current = false;
         setIsGenerating(true);
-        // Do not clear all published articles, just the temporary status for the current run
-        const currentRunArticles: PublishedArticle[] = [];
         setUploadStatus(null);
-        setStep(1); // Start at step 1 for visual progress
+        setStep(1);
     
         for (let i = 1; i <= articlesToProcess; i++) {
-            console.log(`[DEBUG] Starting article generation loop. Current i: ${i} / ${articlesToProcess}`);
-            // Reset states for a single paper run
             setIsGenerationComplete(false);
             setGenerationProgress(0);
             setAnalysisResults([]);
@@ -320,6 +438,7 @@ const App: React.FC = () => {
     
                 // 3. Iterative Analysis and Improvement
                 for (let iter = 1; iter <= TOTAL_ITERATIONS; iter++) {
+                    if (isGenerationCancelled.current) break;
                     const progress = 15 + (iter / TOTAL_ITERATIONS) * 75;
                     setGenerationProgress(progress);
                     setGenerationStatus(`Artigo ${i}/${articlesToProcess}: Iniciando iteração de análise ${iter}/${TOTAL_ITERATIONS}...`);
@@ -350,135 +469,130 @@ const App: React.FC = () => {
                     }
                 }
     
+                if (isGenerationCancelled.current) {
+                    setIsGenerating(false);
+                    return;
+                }
+                
                 finalPaperCode = currentPaper;
                 setFinalLatexCode(finalPaperCode);
                 
                 // === COMPILE LATEX ===
                 setGenerationProgress(95);
-                let compiledFile: File | null = null;
-                let finalFixedCode = '';
+                let compiledFile: File;
+                let finalFixedCode: string;
 
                 try {
-                    const compilationUpdater = (message: string) => {
-                        setGenerationStatus(`Artigo ${i}/${articlesToProcess}: ${message}`);
-                    };
-                    
-                    const { pdfFile, finalCode } = await robustCompile(finalPaperCode, compilationUpdater);
-                    compiledFile = pdfFile;
-                    finalFixedCode = finalCode;
-
+                    const compilationUpdater = (message: string) => setGenerationStatus(`Artigo ${i}/${articlesToProcess}: ${message}`);
+                    const result = await robustCompile(finalPaperCode, compilationUpdater);
+                    compiledFile = result.pdfFile;
+                    finalFixedCode = result.finalCode;
                 } catch (error) {
                     const errorMessage = error instanceof Error ? error.message : 'Falha na compilação por motivo desconhecido.';
                     setGenerationStatus(`❌ Falha na compilação do Artigo ${i}. O código foi salvo como exemplo de erro. Pulando para o próximo...`);
                     console.error(`Compilation failed for paper ${i}:`, error);
-                    // Wait a moment so the user can read the status update
                     await new Promise(resolve => setTimeout(resolve, 4000)); 
-                    continue; // This is the key change: skip to the next iteration of the for loop
+                    continue;
                 }
                 
                 // === UPLOAD TO ZENODO ===
-                setGenerationStatus(`Artigo ${i}/${articlesToProcess}: Publicando no Zenodo...`);
-                setGenerationProgress(98);
-                const metadataForUpload = extractMetadata(finalFixedCode, true);
-                const keywordsForUpload = finalFixedCode.match(/\\keywords\{([^}]+)\}/)?.[1] || '';
-    
-                const MAX_UPLOAD_RETRIES = 10;
-                let publishedResult: PublishedArticle | null = null;
-                for (let attempt = 1; attempt <= MAX_UPLOAD_RETRIES; attempt++) {
-                    try {
-                        const baseUrl = useSandbox ? 'https://sandbox.zenodo.org/api' : 'https://zenodo.org/api';
-                        
-                        const createResponse = await fetch(`${baseUrl}/deposit/depositions`, {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${storedToken}`, 'Content-Type': 'application/json' },
-                            body: JSON.stringify({})
-                        });
-                        if (!createResponse.ok) throw new Error(`Erro ${createResponse.status}: Falha ao criar depósito.`);
-                        const deposit = await createResponse.json();
-    
-                        const formData = new FormData();
-                        formData.append('file', compiledFile, 'paper.pdf');
-                        const uploadResponse = await fetch(`${baseUrl}/deposit/depositions/${deposit.id}/files`, {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${storedToken}` },
-                            body: formData
-                        });
-                        if (!uploadResponse.ok) throw new Error('Falha no upload do PDF');
-    
-                        const keywordsArray = keywordsForUpload.split(',').map(k => k.trim()).filter(k => k);
-                        const metadataPayload = {
-                            metadata: {
-                                title: metadataForUpload.title,
-                                upload_type: 'publication',
-                                publication_type: 'article',
-                                description: metadataForUpload.abstract,
-                                creators: metadataForUpload.authors.filter(a => a.name).map(a => ({
-                                    name: a.name,
-                                    orcid: a.orcid || undefined
-                                })),
-                                keywords: keywordsArray.length > 0 ? keywordsArray : undefined
-                            }
-                        };
-                        const metadataResponse = await fetch(`${baseUrl}/deposit/depositions/${deposit.id}`, {
-                            method: 'PUT',
-                            headers: { 'Authorization': `Bearer ${storedToken}`, 'Content-Type': 'application/json' },
-                            body: JSON.stringify(metadataPayload)
-                        });
-                        if (!metadataResponse.ok) throw new Error('Falha ao atualizar metadados');
-    
-                        const publishResponse = await fetch(`${baseUrl}/deposit/depositions/${deposit.id}/actions/publish`, {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${storedToken}` }
-                        });
-                        if (!publishResponse.ok) throw new Error('Falha ao publicar');
-                        const published = await publishResponse.json();
-    
-                        const zenodoLink = useSandbox ? `https://sandbox.zenodo.org/records/${deposit.id}` : `https://zenodo.org/records/${deposit.id}`;
-                        publishedResult = { 
-                            doi: published.doi, 
-                            link: zenodoLink, 
-                            title: metadataForUpload.title,
-                            date: new Date().toISOString()
-                        };
-                        break; // SUCCESS!
-    
-                    } catch (error) {
-                        const errorMessage = error instanceof Error ? error.message : `Tentativa ${attempt} falhou.`;
-                        if (attempt === MAX_UPLOAD_RETRIES) {
-                            throw new Error(`Falha ao enviar para o Zenodo após ${MAX_UPLOAD_RETRIES} tentativas. Erro final: ${errorMessage}`);
-                        }
-                        const delayTime = 15000 + (5000 * (attempt - 1));
-                        setGenerationStatus(`Artigo ${i}/${articlesToProcess}: ❌ ${errorMessage} Aguardando ${delayTime / 1000}s para tentar novamente...`);
-                        await new Promise(resolve => setTimeout(resolve, delayTime));
-                    }
-                }
-                
-                if (publishedResult) {
-                    currentRunArticles.push(publishedResult);
-                    setPublishedArticles(prev => [...prev, publishedResult]);
-                } else {
-                    throw new Error("Não foi possível publicar no Zenodo após todas as tentativas.");
+                try {
+                    const statusUpdaterForUpload = (message: string) => setGenerationStatus(`Artigo ${i}/${articlesToProcess}: ${message}`);
+                    const publishedData = await uploadArticleToZenodo(compiledFile, finalFixedCode, statusUpdaterForUpload);
+
+                    const newLogEntry: ArticleLogEntry = {
+                        id: new Date().toISOString() + Math.random(),
+                        status: 'published',
+                        title: publishedData.title,
+                        date: new Date().toISOString(),
+                        doi: publishedData.doi,
+                        link: publishedData.link
+                    };
+                    setArticlesLog(prev => [...prev, newLogEntry]);
+                } catch (uploadError) {
+                    const errorMessage = uploadError instanceof Error ? uploadError.message : "Falha ao publicar no Zenodo.";
+                    setGenerationStatus(`Artigo ${i}/${articlesToProcess}: ❌ Falha no upload: ${errorMessage}. Salvando para tentativa posterior.`);
+                    console.error(`Upload failed for paper ${i}:`, uploadError);
+                    
+                    const pdfBase64 = await fileToBase64(compiledFile);
+                    const metadataForTitle = extractMetadata(finalFixedCode, true);
+
+                    const newLogEntry: ArticleLogEntry = {
+                        id: new Date().toISOString() + Math.random(),
+                        status: 'unpublished',
+                        title: metadataForTitle.title,
+                        date: new Date().toISOString(),
+                        latexCode: finalFixedCode,
+                        pdfBase64: pdfBase64
+                    };
+                    setArticlesLog(prev => [...prev, newLogEntry]);
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                 }
     
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : `Ocorreu um erro desconhecido no artigo ${i}.`;
-                
                 if (errorMessage.toLowerCase().includes('quota')) {
-                    setGenerationStatus(`⚠️ Limite de cota da API atingido. A automação foi pausada. O processo será retomado no próximo dia agendado.`);
+                    setGenerationStatus(`⚠️ Limite de cota da API atingido. A automação foi pausada.`);
                 } else {
                     setGenerationStatus(`❌ Erro no artigo ${i}: ${errorMessage}. Parando automação.`);
                 }
-
                 setIsGenerating(false);
-                return; // Stop the entire process
+                return;
             }
         }
     
-        // After the loop
         setIsGenerating(false);
         setGenerationProgress(100);
-        setGenerationStatus(`✅ Processo concluído! ${currentRunArticles.length} de ${articlesToProcess} artigos publicados.`);
+        setGenerationStatus(`✅ Processo concluído! Verifique a aba 'Artigos Publicados' para os resultados.`);
         setStep(4);
+    };
+
+    const handleRepublish = async (articleToRepublish: ArticleLogEntry) => {
+        if (!articleToRepublish.pdfBase64 || !articleToRepublish.latexCode) {
+            alert("Dados do artigo ausentes. Não é possível republicar.");
+            return;
+        }
+
+        const storedToken = localStorage.getItem('zenodo_api_key');
+        if (!storedToken) {
+            alert('❌ Token Zenodo não encontrado! Por favor, configure-o nas definições (ícone de engrenagem) antes de tentar publicar.');
+            return;
+        }
+        setZenodoToken(storedToken);
+
+        setRepublishingId(articleToRepublish.id);
+        try {
+            const pdfFile = base64ToFile(articleToRepublish.pdfBase64, 'paper.pdf');
+            
+            const statusUpdater = (message: string) => {
+                setUploadStatus(<div className="status-message status-info">{message}</div>);
+            };
+
+            const publishedData = await uploadArticleToZenodo(pdfFile, articleToRepublish.latexCode, statusUpdater);
+
+            setArticlesLog(prevLog => prevLog.map(entry => {
+                if (entry.id === articleToRepublish.id) {
+                    return {
+                        id: entry.id,
+                        status: 'published',
+                        title: publishedData.title, // Update title in case it was extracted differently
+                        date: new Date().toISOString(),
+                        doi: publishedData.doi,
+                        link: publishedData.link,
+                    };
+                }
+                return entry;
+            }));
+            setUploadStatus(<div className="status-message status-success">✅ Artigo '{publishedData.title}' publicado com sucesso!</div>);
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro desconhecido.";
+            console.error("Republish failed:", error);
+            alert(`Falha ao publicar o artigo: ${errorMessage}`);
+            setUploadStatus(<div className="status-message status-error">❌ Falha ao republicar: {errorMessage}</div>);
+        } finally {
+            setRepublishingId(null);
+        }
     };
     
     const handleProceedToCompile = () => {
@@ -487,7 +601,7 @@ const App: React.FC = () => {
         setStep(2);
     }
     
-    const extractMetadata = (code: string, returnData = false) => {
+    const extractMetadata = (code: string, returnData = false): any => {
         const titleMatch = code.match(/\\title\{([^}]+)\}/);
         const title = titleMatch ? titleMatch[1].replace(/\\/g, '') : 'Untitled Paper';
         
@@ -511,7 +625,7 @@ const App: React.FC = () => {
 
         setKeywordsInput(keywords);
         setExtractedMetadata(metadata);
-        return metadata; // for TS consistency
+        return metadata;
     }
 
     const handleCompileLaTeX = async () => {
@@ -763,7 +877,7 @@ Este arquivo explica como usar os arquivos \`successful_compilations.json\` e \`
         setFilter(prev => ({ ...prev, [name]: value }));
     };
 
-    const filteredArticles = publishedArticles.filter(article => {
+    const filteredLog = articlesLog.filter(article => {
         if (!article.date) return false;
         try {
             const date = new Date(article.date);
@@ -1030,7 +1144,9 @@ Este arquivo explica como usar os arquivos \`successful_compilations.json\` e \`
                                         </p>
                                     </div>
                                 );
-                                setPublishedArticles(prev => [...prev, {
+                                setArticlesLog(prev => [...prev, {
+                                    id: new Date().toISOString() + Math.random(),
+                                    status: 'published',
                                     doi: result.doi,
                                     link: result.zenodoLink,
                                     title: extractedMetadata.title,
@@ -1072,24 +1188,50 @@ Este arquivo explica como usar os arquivos \`successful_compilations.json\` e \`
                             <thead className="bg-gray-100">
                                 <tr>
                                     <th className="py-3 px-4 text-left font-semibold text-gray-600">Título do Artigo</th>
-                                    <th className="py-3 px-4 text-left font-semibold text-gray-600">Data de Publicação</th>
-                                    <th className="py-3 px-4 text-left font-semibold text-gray-600">Link DOI</th>
+                                    <th className="py-3 px-4 text-left font-semibold text-gray-600">Data</th>
+                                    <th className="py-3 px-4 text-left font-semibold text-gray-600">Status</th>
+                                    <th className="py-3 px-4 text-left font-semibold text-gray-600">Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredArticles.length > 0 ? filteredArticles.map((article, index) => (
-                                    <tr key={index} className="border-b hover:bg-gray-50">
+                                {filteredLog.length > 0 ? filteredLog.map((article) => (
+                                    <tr key={article.id} className="border-b hover:bg-gray-50">
                                         <td className="py-3 px-4">{article.title}</td>
                                         <td className="py-3 px-4">{new Date(article.date).toLocaleString()}</td>
                                         <td className="py-3 px-4">
-                                            <a href={article.link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">
-                                                {article.doi}
-                                            </a>
+                                            {article.status === 'published' ? (
+                                                <div className="flex items-center">
+                                                    <span className="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">Publicado</span>
+                                                     <a href={article.link} target="_blank" rel="noopener noreferrer" className="ml-2 text-indigo-600 hover:underline text-sm" title={article.doi}>
+                                                        Ver DOI
+                                                    </a>
+                                                </div>
+                                            ) : (
+                                                <span className="px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-100 rounded-full">Não Publicado</span>
+                                            )}
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            {article.status === 'unpublished' && (
+                                                <button
+                                                    onClick={() => handleRepublish(article)}
+                                                    disabled={republishingId === article.id}
+                                                    className="btn btn-primary text-sm py-1 px-3"
+                                                >
+                                                    {republishingId === article.id ? (
+                                                        <>
+                                                            <span className="spinner !w-4 !h-4"></span>
+                                                            Publicando...
+                                                        </>
+                                                    ) : (
+                                                        'Publicar'
+                                                    )}
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 )) : (
                                     <tr>
-                                        <td colSpan={3} className="text-center py-8 text-gray-500">Nenhum artigo publicado encontrado.</td>
+                                        <td colSpan={4} className="text-center py-8 text-gray-500">Nenhum artigo encontrado.</td>
                                     </tr>
                                 )}
                             </tbody>

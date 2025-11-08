@@ -197,21 +197,29 @@ export async function generateInitialPaper(title: string, language: Language, pa
     const examples = getCompilationExamplesForPrompt();
     const examplesPrompt = formatExamplesForPrompt(examples);
 
-    const systemInstruction = `You are a world-class AI assistant specialized in generating high-quality, well-structured scientific papers in LaTeX format. Your task is to write a complete, coherent, and academically rigorous paper based on the provided title.
+    const systemInstruction = `You are a world-class AI assistant specialized in generating high-quality scientific articles in LaTeX format, strictly following the Brazilian ABNT standards (NBR 6022 for articles, NBR 6023 for references).
 
-    **Output Format & Rules:**
+    **General Formatting Rules (ABNT):**
+    -   **Paper Size:** A4.
+    -   **Margins:** Top and Left: 3cm. Bottom and Right: 2cm.
+    -   **Font:** Times New Roman, 12pt.
+    -   **Line Spacing:** 1.5 for the main text. Single spacing for references.
+
+    **Output Format & Strict Rules:**
     1.  **Strictly LaTeX:** The entire output MUST be a single, valid, and complete LaTeX document. Do not include any explanatory text, markdown formatting, or code fences (like \`\`\`latex) before \`\\documentclass\` or after \`\\end{document}\`.
-    2.  **Mandatory Preamble:** The paper must begin with the following preamble, exactly as written. NO other packages, especially \`graphicx\`, are allowed.
+    2.  **Mandatory Preamble:** The paper must begin with the following preamble, exactly as written. NO other packages are allowed.
         \`\`\`latex
         \\documentclass[12pt,a4paper]{article}
         \\usepackage[utf8]{inputenc}
         \\usepackage[T1]{fontenc}
+        \\usepackage{times}
         \\usepackage[${babelLanguage}]{babel}
-        \\usepackage{amsmath, amssymb, geometry, setspace, url, verbatim}
+        \\usepackage[a4paper, left=3cm, right=2cm, top=3cm, bottom=2cm]{geometry}
+        \\usepackage{amsmath, amssymb, setspace, url, verbatim}
         \\usepackage{hyperref}
         \`\`\`
-    3.  **PDF Metadata (Crucial):** Immediately after the preamble, you MUST add a \`\\hypersetup\` block to define the PDF metadata.
-        -   The \`pdfsubject\` field MUST contain the **full, complete abstract** of the paper. It must not be a single line. The abstract text itself must not contain any LaTeX commands like \`\\noindent\`.
+    3.  **PDF Metadata (Crucial):** Immediately after the preamble, you MUST add a \`\\hypersetup\` block.
+        -   The \`pdfsubject\` field MUST contain the **full, complete abstract (Resumo)** of the paper. It must not contain any LaTeX commands.
         -   The \`pdfkeywords\` field must contain the keywords, separated by commas.
         -   The \`pdftitle\` must match the paper's title.
         -   The \`pdfauthor\` MUST be exactly "SÉRGIO DE ANDRADE, PAULO".
@@ -221,53 +229,45 @@ export async function generateInitialPaper(title: string, language: Language, pa
         \\hypersetup{
           pdftitle={The Title of the Paper},
           pdfauthor={SÉRGIO DE ANDRADE, PAULO},
-          pdfsubject={The complete multi-sentence abstract of the paper goes here. It should be identical to the abstract that appears visually in the document after \\maketitle.},
-          pdfkeywords={Keyword1, Keyword2, Keyword3}
+          pdfsubject={O resumo completo do artigo, em um único parágrafo, vai aqui. Deve ser idêntico ao resumo que aparece visualmente no documento.},
+          pdfkeywords={Palavra-chave1, Palavra-chave2, Palavra-chave3}
         }
         \`\`\`
-    4.  **Title, Author, and Date:** You MUST use the standard \`\\title{}\`, \`\\author{}\`, \`\\date{}\`, and \`\\maketitle\` commands.
-        -   The \`\\author\` command MUST be written EXACTLY as follows, including all formatting and line breaks. This is a strict requirement.
-            \`\`\`latex
-            \\author{
-              SÉRGIO DE ANDRADE, PAULO \\\\
-              \\small ORCID: \\url{https://orcid.org/0009-0004-2555-3178}
-            }
-            \`\`\`
-        -   **To remove the date completely, you MUST add the command \`\\date{}\` (with empty braces) before \`\\maketitle\`.**
-    5.  **Structure:** The paper must follow the standard IMRAD structure:
-        -   Abstract (Resumo)
-        -   Keywords (Palavras-chave)
-        -   Introduction (Introdução)
-        -   Literature Review (Revisão da Literatura)
-        -   Methodology (Metodologia)
-        -   Results (Resultados)
-        -   Discussion (Discussão)
-        -   Conclusion (Conclusão)
-    6.  **Abstract and Keywords Formatting:**
-        -   The Abstract (Resumo) must be identical to the content of the \`pdfsubject\` field and must not contain the \`\\noindent\` command.
-        -   Immediately after the abstract concludes, you must insert \`\\vspace{1cm}\` on its own line.
-        -   The very next line MUST be \`\\noindent \\textbf{Palavras-chave:}\` followed by the keywords.
-        -   The keywords must be identical to the content of the \`pdfkeywords\` field.
-        -   There must be NO other text, content, or commands between the abstract and the keywords line. This is a strict formatting rule.
-    7.  **Page Count:** The final rendered PDF should be approximately **${pageCount} pages** long. Adjust the depth and breadth of content in all sections to meet this requirement. This is a primary constraint.
-    8.  **Content Quality:** The content must be scientifically plausible, well-argued, and appropriate for the given title. The language must be academic and formal.
-    9.  **References Section (Strict Formatting):**
+    4.  **Document Start:** The document body must begin with \`\\begin{document}\` followed immediately by \`\\onehalfspacing\`.
+    5.  **Title and Author Block (NO \\maketitle):** You MUST NOT use the \`\\maketitle\` command. Instead, create the title block manually at the very start of the document body, formatted exactly as follows:
+        \`\`\`latex
+        \\begin{center}
+          \\textbf{\\MakeUppercase{${title}}}
+        \\end{center}
+        \\vspace{1.5cm}
+        \\begin{flushright}
+          SÉRGIO DE ANDRADE, PAULO \\\\
+          \\small ORCID: \\url{https://orcid.org/0009-0004-2555-3178}
+        \\end{flushright}
+        \\vspace{1.5cm}
+        \`\`\`
+    6.  **Resumo (Abstract) and Palavras-chave (Keywords):**
+        -   This section MUST begin with an unnumbered, centered section title: \`\\begin{center}\\textbf{RESUMO}\\end{center}\`.
+        -   The abstract text follows, as a single paragraph. It must be identical to the content of the \`pdfsubject\` field.
+        -   After the abstract, insert a blank line, followed by: \`\\noindent\\textbf{Palavras-chave:}\` and then the keywords.
+    7.  **Page Count:** The final rendered PDF should be approximately **${pageCount} pages** long. Adjust the content depth to meet this requirement.
+    8.  **Main Body Sections (Numbered and Uppercase):**
+        -   The main sections of the paper (Introduction, etc.) MUST be created using the \`\\section{}\` command.
+        -   Section titles MUST be in uppercase. For example: \`\\section{INTRODUÇÃO}\`.
+    9.  **Referências (References) Section (Strict Formatting):**
         -   The final section MUST be the references.
-        -   This section MUST begin with **EXACTLY ONE** \`\\section{Referências}\` command.
-        -   Immediately following \`\\section{Referências}\`, you MUST present **exactly ${referenceCount} entries** as a simple, unnumbered list (e.g., using a \\begin{itemize} environment or just \\noindent and \\par for each reference).
-        -   **CRITICAL: Absolutely DO NOT use the \`\\begin{thebibliography}\`, \`\\end{thebibliography}\`, or \`\\bibitem\` commands anywhere in the document. The references MUST be formatted as a plain, unnumbered list directly following \`\\section{Referências}\`.**
-        -   **Do NOT use the \`\\cite{}\` command anywhere in the text**, as there will be no numbered bibliography environment to link to.
-        -   The sources for these references will be provided by a Google Search grounding tool. These are your **primary sources**. You MUST prioritize their use.
-        -   You may supplement these with high-quality academic references from your own internal knowledge base (acting as an auxiliary source like Grokpedia) if the primary sources are insufficient, but the majority of the bibliography MUST be derived from the provided Google Search results.
-        -   Do not invent sources.
-        -   **Crucially, do not place any \`\\newpage\` commands anywhere in the document, and do not create a second, duplicate reference section.**
-    10. **No Advanced Packages/Features or Visual Elements:** Do not use packages like \`graphicx\`, \`tikz\`, or any complex table environments (\`tabularx\`, \`longtable\`). Do not include images, figures, organograms, flowcharts, diagrams, or complex tables. Use only the packages listed in the mandatory preamble. Using \`graphicx\` is strictly forbidden.
-    11. **Language:** The entire paper, including section titles and content, must be written in **${languageName}**.
-    12. **No Page Breaks:** Under no circumstances should you ever use the \`\\newpage\` command anywhere in the document. This is a critical instruction.
+        -   This section MUST begin with an unnumbered section title: \`\\section*{REFERÊNCIAS}\`.
+        -   You MUST present **exactly ${referenceCount} entries**.
+        -   Each entry MUST be formatted as a plain paragraph, left-aligned, with single line spacing within the entry and a blank line between entries.
+        -   **CRITICAL: The formatting of each reference MUST strictly follow the ABNT NBR 6023 standard.**
+        -   **CRITICAL: Absolutely DO NOT use \`\\begin{thebibliography}\`, \`\\end{thebibliography}\`, \`\\bibitem\`, or any citation management packages/commands. Format the list manually.**
+        -   **Do NOT use the \`\\cite{}\` command anywhere in the text body.**
+        -   The sources for these references will be provided by a Google Search grounding tool. You MUST prioritize their use.
+    10. **Forbidden Elements:** Do not use packages like \`graphicx\`. Do not include images, figures, tables, or use the \`\\newpage\` command.
 
     **Execution:**
-    -   First, use the Google Search tool results provided to you to find high-quality academic sources (papers, books, articles) relevant to the paper's title. These grounded results should form the primary basis of your bibliography.
-    -   Then, proceed to write the complete LaTeX document according to all the rules above, paying special attention to correctly and completely populating the \`\\hypersetup\` block and using the exact author block specified.
+    -   First, use the Google Search tool results to find high-quality academic sources relevant to the paper's title.
+    -   Then, write the complete LaTeX document according to all the ABNT rules specified above.
     ${examplesPrompt}
     `;
 
@@ -380,24 +380,22 @@ export async function improvePaper(paperContent: string, analysis: AnalysisResul
     const examples = getCompilationExamplesForPrompt();
     const examplesPrompt = formatExamplesForPrompt(examples);
 
-    const systemInstruction = `You are a world-class AI assistant specialized in editing and improving scientific papers written in LaTeX. Your task is to refine the provided LaTeX paper based on specific improvement suggestions.
+    const systemInstruction = `You are a world-class AI assistant specialized in editing and improving scientific papers written in LaTeX. Your task is to refine the provided LaTeX paper based on specific improvement suggestions, while strictly maintaining the ABNT formatting standard.
 
     **Instructions for Improvement:**
     -   Critically analyze the provided "Current Paper Content" against the "Improvement Points".
     -   Apply the necessary changes directly to the LaTeX source code to address each improvement point.
-    -   Ensure that the scientific content remains accurate and coherent.
-    -   Maintain the exact LaTeX preamble, author information, title, and metadata structure as in the original. Do NOT change \\documentclass, \\usepackage, \\hypersetup, \\title, \\author, \\date, \\maketitle.
+    -   Maintain the exact ABNT LaTeX structure from the original: preamble, manual title block, metadata, uppercase section titles, etc. Do NOT change \\documentclass, \\usepackage, or \\hypersetup. Do NOT reintroduce the \\maketitle command.
     -   The entire output MUST be a single, valid, and complete LaTeX document. Do not include any explanatory text, markdown formatting, or code fences (like \`\`\`latex) before \`\\documentclass\` or after \`\\end{document}\`.
     -   The language of the entire paper must remain in **${languageName}**.
-    -   **CRITICAL: Absolutely DO NOT use the \`\\begin{thebibliography}\`, \`\\end{thebibliography}\`, or \`\\bibitem\` commands anywhere in the document. The references MUST be formatted as a plain, unnumbered list directly following \`\\section{Referências}\`.**
-    -   **Do NOT use the \`\\cite{}\` command anywhere in the text.**
+    -   **CRITICAL: The reference section MUST remain unnumbered (\`\\section*{REFERÊNCIAS}\`) and formatted according to ABNT NBR 6023. Do NOT use \`\\begin{thebibliography}\`, \`\\end{thebibliography}\`, \`\\bibitem\`, or \`\\cite{}\` commands.**
     -   **Do NOT add or remove \`\\newpage\` commands. Let the LaTeX engine handle page breaks automatically.**
-    -   **Crucially, do NOT include any images, figures, organograms, flowcharts, diagrams, or complex tables in the improved paper.**
-    -   Focus on improving aspects directly related to the provided feedback. Do not introduce new content unless necessary to address a critique.
+    -   **Crucially, do NOT include any images, figures, or complex tables.**
+    -   Focus on improving aspects directly related to the provided feedback.
     ${examplesPrompt}
     `;
 
-    const userPrompt = `Current Paper Content:\n\n${paperContent}\n\nImprovement Points:\n\n${improvementPoints}\n\nBased on the above improvement points, provide the complete, improved LaTeX source code for the paper.`;
+    const userPrompt = `Current Paper Content:\n\n${paperContent}\n\nImprovement Points:\n\n${improvementPoints}\n\nBased on the above improvement points, provide the complete, improved LaTeX source code for the paper, ensuring all ABNT formatting is preserved.`;
 
     const response = await callModel(model, systemInstruction, userPrompt);
     let paper = response.text.trim().replace(/^```latex\s*|```\s*$/g, '');
@@ -416,23 +414,22 @@ export async function fixLatexPaper(paperContent: string, fixesToApply: { key: s
     const examples = getCompilationExamplesForPrompt();
     const examplesPrompt = formatExamplesForPrompt(examples);
 
-    const systemInstruction = `You are an expert LaTeX editor AI. Your task is to fix common compilation and formatting issues in a given LaTeX document based on specific instructions.
+    const systemInstruction = `You are an expert LaTeX editor AI. Your task is to fix common compilation issues in a given LaTeX document, while strictly preserving its ABNT formatting.
 
     **Instructions for Fixing:**
     -   You will receive the full LaTeX source code of a paper.
     -   You MUST apply the following specific fixes to the document:
         -   ${fixInstructions}
-    -   The entire output MUST be a single, valid, and complete LaTeX document. Do not include any explanatory text, markdown formatting, or code fences (like \`\`\`latex) before \`\\documentclass\` or after \`\\end{document}\`.
-    -   Maintain the exact LaTeX preamble, author information, title, and metadata structure as in the original. Do NOT change \\documentclass, \\usepackage, \\hypersetup, \\title, \\author, \\date, \\maketitle.
-    -   **CRITICAL: Absolutely DO NOT use the \`\\begin{thebibliography}\`, \`\\end{thebibliography}\`, or \`\\bibitem\` commands anywhere in the document. The references MUST be formatted as a plain, unnumbered list directly following \`\\section{Referências}\`.**
-    -   **Do NOT use the \`\\cite{}\` command anywhere in the text.**
-    -   **Do NOT add or remove \`\\newpage\` commands. Let the LaTeX engine handle page breaks automatically.**
-    -   **Do NOT include any images, figures, organograms, flowcharts, diagrams, or complex tables in the fixed paper.**
+    -   The entire output MUST be a single, valid, and complete LaTeX document. Do not include any explanatory text, markdown formatting, or code fences.
+    -   Maintain the exact ABNT LaTeX structure from the original: preamble, manual title block, metadata, etc. Do NOT change \\documentclass, \\usepackage, or \\hypersetup. Do NOT reintroduce the \\maketitle command.
+    -   **CRITICAL: The reference section MUST remain unnumbered (\`\\section*{REFERÊNCIAS}\`) and formatted according to ABNT NBR 6023. Do NOT use \`\\begin{thebibliography}\`, \`\\end{thebibliography}\`, \`\\bibitem\`, or \`\\cite{}\` commands.**
+    -   **Do NOT add or remove \`\\newpage\` commands.**
+    -   **Do NOT include any images, figures, or complex tables.**
     -   Return only the corrected LaTeX source code.
     ${examplesPrompt}
     `;
 
-    const userPrompt = `Current LaTeX Paper:\n\n${paperContent}\n\nApply the specified fixes and provide the complete, corrected LaTeX source code.`;
+    const userPrompt = `Current LaTeX Paper:\n\n${paperContent}\n\nApply the specified fixes and provide the complete, corrected LaTeX source code, ensuring all ABNT formatting is preserved.`;
 
     const response = await callModel(model, systemInstruction, userPrompt);
     let paper = response.text.trim().replace(/^```latex\s*|```\s*$/g, '');
@@ -455,7 +452,7 @@ export async function reformatPaperWithStyleGuide(paperContent: string, styleGui
 
     **CRITICAL INSTRUCTIONS:**
     1.  You will receive the full LaTeX source code of a paper.
-    2.  Your task is to reformat **ONLY** the content within the \`\\section{Referências}\` section.
+    2.  Your task is to reformat **ONLY** the content within the \`\\section*{REFERÊNCIAS}\` section.
     3.  You **MUST NOT** change any other part of the document. The preamble, abstract, body text, conclusion, etc., must remain absolutely identical to the original.
     4.  The new reference list must strictly adhere to the **${styleGuideInfo.name} (${styleGuideInfo.description})** formatting rules.
     5.  The number of references in the output must be the same as in the input.

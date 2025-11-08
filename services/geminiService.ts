@@ -205,6 +205,11 @@ export async function generateInitialPaper(title: string, language: Language, pa
     4.  **Meet Page Count:** The generated content must be substantial enough to ensure the final rendered PDF is **at least ${pageCount} pages** long.
     5.  **Strict Output Format:** The ENTIRE output MUST be ONLY the completed LaTeX code. Do not add any explanation, markdown formatting (like \`\`\`latex\`), or any text before \`\\documentclass\` or after \`\\end{document}\`.
 
+    **Proactive Overflow Prevention Rules (CRITICAL for compilation success):**
+    -   **URL Handling:** ALWAYS wrap any URL or long file path in a \`\\url{...}\` command. The required \`url\` and \`hyperref\` packages are already included in the template. This is mandatory.
+    -   **Long Words:** Avoid using extremely long, unbreakable words or identifiers. If a long word is necessary, either rephrase the sentence to place it differently or insert manual hyphenation hints (\`\\-\`) to guide line breaking (e.g., \`super\\-cali\\-fragilistic\`).
+    -   **Spacing and Justification:** Write natural-flowing paragraphs. Do not try to manually force line breaks with \`\\\\\` inside a paragraph. Trust LaTeX's justification engine, but help it by following the other rules.
+
     **Provided LaTeX Templates:**
     ${templatesString}
     `;
@@ -337,6 +342,12 @@ export async function improvePaper(paperContent: string, analysis: AnalysisResul
     -   **Do NOT add or remove \`\\newpage\` commands. Let the LaTeX engine handle page breaks automatically.**
     -   **Crucially, do NOT include any images, figures, or complex tables.**
     -   Focus on improving aspects directly related to the provided feedback.
+    
+    **Proactive Overflow Prevention Rules (CRITICAL for compilation success):**
+    -   **URL Handling:** ALWAYS wrap any URL or long file path in a \`\\url{...}\` command. The required \`url\` and \`hyperref\` packages are already included. This is mandatory.
+    -   **Long Words:** Avoid using extremely long, unbreakable words or identifiers. If a long word is necessary, either rephrase the sentence to place it differently or insert manual hyphenation hints (\`\\-\`) to guide line breaking.
+    -   **Spacing and Justification:** Write natural-flowing paragraphs. Do not try to manually force line breaks with \`\\\\\` inside a paragraph.
+
     ${examplesPrompt}
     `;
 
@@ -353,7 +364,7 @@ export async function improvePaper(paperContent: string, analysis: AnalysisResul
     return paper;
 }
 
-export async function fixLatexPaper(paperContent: string, fixesToApply: { key: string; label: string; description: string }[], model: string): Promise<string> {
+export async function fixLatexPaper(paperContent: string, fixesToApply: { key: string; label: string; description: string }[], model: string, compilationLog?: string): Promise<string> {
     const fixInstructions = fixesToApply.map(fix => `**${fix.label}**: ${fix.description}`).join('\n- ');
 
     const examples = getCompilationExamplesForPrompt();
@@ -364,7 +375,28 @@ export async function fixLatexPaper(paperContent: string, fixesToApply: { key: s
 
     const hasPageMarginFix = fixesToApply.some(fix => fix.key === 'page_margin_overflow');
     const priorityInstruction = hasPageMarginFix 
-        ? `**HIGHEST PRIORITY: Your most important task is to fix page margin overflows.** These are often reported as "overfull \\hbox" errors in LaTeX logs. Scrutinize every line of the document for words, URLs, or mathematical expressions that are too long to fit within the text width. Aggressively apply fixes: rephrase sentences, suggest hyphenation for long words (e.g., using \`\\-\`), enclose URLs in \`\\url{...}\` commands, and break long inline equations if necessary. Be proactive in identifying potential overflow issues even if they are not immediately obvious.`
+        ? `**HIGHEST PRIORITY: Your primary and most critical task is to fix all text that overflows the page margins.** This is the most common reason for compilation failure or poor visual output, often reported as "overfull \\hbox" in LaTeX logs. You must be extremely aggressive in resolving these issues using a two-phase approach: Log Analysis and Static Analysis.
+
+        **Phase 1: Log Analysis (if a log is provided)**
+        If a compilation log is attached, your first step is to analyze it forensically.
+        -   **Identify Specific Errors:** Scan the log for every instance of \`Overfull \\hbox\`, \`Overfull \\vbox\`, \`Underfull \\hbox\`, and \`Underfull \\vbox\`.
+        -   **Locate the Source:** Note the exact line numbers and the content identified in the log as causing the problem.
+        -   **Surgical Correction:** Go to these specific lines in the LaTeX code and apply targeted fixes. This is your most important guide.
+
+        **Phase 2: Proactive Static Analysis & Fixing**
+        After addressing log-specific errors, or if no log is provided, you must perform a full static scan of the document for potential overflow causes. Be proactive.
+        1.  **Long Unbreakable Content:**
+            *   **URLs:** Ensure ALL URLs are wrapped in the \`\\url{...}\` command. The document already includes the \`url\` and \`hyperref\` packages. This is the most common cause.
+            *   **Long Words:** Find long words/identifiers without hyphens. Rephrase the sentence to avoid them, or if that's not possible, insert manual hyphenation hints using \`\\-\` (e.g., \`super\\-cali\\-fragilistic\`).
+            *   **Verbatim Text:** Check for long lines inside \`\\begin{verbatim}...\` blocks. If a line is too long, consider if it can be broken or if the section needs reformatting.
+        2.  **Structural Issues:**
+            *   **Tables:** Look for \`\\begin{tabular}\` environments. If columns contain long text but don't use a width specifier like \`p{5cm}\`, they are likely to cause overflow.
+            *   **Images:** Although unlikely in this content, if an \`\\includegraphics\` command exists without a width option (e.g., \`width=0.8\\textwidth\`), it's a high-risk for overflow.
+        3.  **Aggressive Fixing Techniques:**
+            *   **Rephrasing:** This is the best solution. Slightly alter sentences to improve line breaks.
+            *   **Sloppy Paragraphs:** As a last resort for a very problematic paragraph, wrap it in a \`{\\sloppy ...}\` block or use the \`\\begin{sloppypar} ... \\end{sloppypar}\` environment to force LaTeX to avoid overflow at the cost of ideal spacing.
+    
+        **Final Mandate:** It is better to slightly alter the text to ensure it fits within the page margins than to leave an overfull box. Your goal is a clean, compilable document with no text spilling out of the page boundaries.`
         : '';
 
     const systemInstruction = `You are an expert LaTeX editor AI. Your task is to fix common compilation issues in a given LaTeX document, while strictly preserving its ABNT formatting.
@@ -387,8 +419,12 @@ export async function fixLatexPaper(paperContent: string, fixesToApply: { key: s
     -   Return only the corrected LaTeX source code.
     ${examplesPrompt}
     `;
+    
+    const logPromptSection = compilationLog 
+        ? `\n\n**CRITICAL: The previous compilation failed. Here is the compilation log. Analyze it carefully to find the root cause of the errors (especially 'Overfull \\hbox' errors) and fix them:**\n\n\`\`\`log\n${compilationLog}\n\`\`\`\n\n`
+        : '';
 
-    const userPrompt = `Current LaTeX Paper:\n\n${paperContent}\n\nApply the specified fixes and provide the complete, corrected LaTeX source code, ensuring all ABNT formatting and metadata are preserved.`;
+    const userPrompt = `Current LaTeX Paper:\n\n${paperContent}\n\n${logPromptSection}Apply the specified fixes and provide the complete, corrected LaTeX source code, ensuring all ABNT formatting and metadata are preserved.`;
 
     const response = await callModel(model, systemInstruction, userPrompt);
     let paper = response.text.trim().replace(/^```latex\s*|```\s*$/g, '');

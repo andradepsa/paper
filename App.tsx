@@ -501,7 +501,7 @@ const App: React.FC = () => {
                 }
                 
                 // === UPLOAD TO ZENODO ===
-                currentPhase = 'publicação no Zenodo';
+                currentPhase = 'publicação';
                 try {
                     const statusUpdaterForUpload = (message: string) => setGenerationStatus(`Artigo ${i}/${articlesToProcess}: ${message}`);
                     const publishedData = await uploadArticleToZenodo(compiledFile, finalFixedCode, statusUpdaterForUpload);
@@ -1144,6 +1144,7 @@ Este arquivo explica como usar os arquivos \`successful_compilations.json\` e \`
                                 setUploadStatus(<div className="status-message status-info">⏳ Publicando...</div>);
                             }}
                             onPublishSuccess={(result) => {
+                                setIsUploading(false);
                                 setUploadStatus(
                                     <div className="status-message status-success">
                                         <p>✅ Publicado com sucesso!</p>
@@ -1162,7 +1163,49 @@ Este arquivo explica como usar os arquivos \`successful_compilations.json\` e \`
                                     date: new Date().toISOString()
                                 }]);
                             }}
-                            onPublishError={(message) => setUploadStatus(<div className="status-message status-error">❌ {message}</div>)}
+                            onPublishError={async (message) => {
+                                setIsUploading(false);
+                                setUploadStatus(
+                                    <div className="status-message status-error">
+                                        <p>❌ {message}</p>
+                                        <p className="mt-2 text-sm">Saving article to the log for a future publication attempt...</p>
+                                    </div>
+                                );
+                                if (compiledPdfFile && latexCode && extractedMetadata) {
+                                    try {
+                                        const pdfBase64 = await fileToBase64(compiledPdfFile);
+                                        const newLogEntry: ArticleLogEntry = {
+                                            id: new Date().toISOString() + Math.random(),
+                                            status: 'unpublished',
+                                            title: extractedMetadata.title,
+                                            date: new Date().toISOString(),
+                                            latexCode: latexCode,
+                                            pdfBase64: pdfBase64
+                                        };
+                                        setArticlesLog(prev => [...prev, newLogEntry]);
+                                        setUploadStatus(
+                                            <div className="status-message status-error">
+                                                <p>❌ {message}</p>
+                                                <p className="mt-2 font-semibold">This article has been saved for a future attempt.</p>
+                                                <button 
+                                                    onClick={() => setStep(4)}
+                                                    className="mt-2 text-sm text-indigo-700 font-bold hover:underline"
+                                                >
+                                                    Go to 'Published Articles' tab to retry.
+                                                </button>
+                                            </div>
+                                        );
+                                    } catch (error) {
+                                         console.error("Failed to save unpublished article to log:", error);
+                                         setUploadStatus(
+                                            <div className="status-message status-error">
+                                                <p>❌ {message}</p>
+                                                <p className="mt-2 text-sm">Additionally, failed to save the article for a retry attempt. Please check the console.</p>
+                                            </div>
+                                         );
+                                    }
+                                }
+                            }}
                             extractedMetadata={extractedMetadata}
                          />
                          

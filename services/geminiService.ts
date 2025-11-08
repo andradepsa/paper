@@ -299,7 +299,7 @@ export async function analyzePaper(paperContent: string, pageCount: number, mode
     **Input:** You will receive the full LaTeX source code of a scientific paper.
     
     **Task:**
-    1.  Analyze the paper based on the following 28 quality criteria.
+    1.  Analyze the paper based on the following 29 quality criteria.
     2.  For each criterion, provide a numeric score from 0.0 to 10.0, where 10.0 is flawless.
     3.  For each criterion, provide a concise, single-sentence improvement suggestion. This suggestion must be a direct critique of the paper's current state and offer a clear path for enhancement. Do NOT write generic praise. Be critical and specific.
     4.  The "PAGE COUNT COMPLIANCE" topic must be evaluated based on the user's requested page count of ${pageCount}. A perfect score of 10 is achieved if the paper is exactly ${pageCount} pages long. The score should decrease linearly based on the deviation from this target. For example, if the paper is ${pageCount - 2} or ${pageCount + 2} pages, the score might be around 8.0. If it's ${pageCount - 5} or ${pageCount + 5}, the score might be around 5.0.
@@ -410,9 +410,7 @@ export async function improvePaper(paperContent: string, analysis: AnalysisResul
     return paper;
 }
 
-export async function fixLatexPaper(paperContent: string, fixesToApply: { key: string; label: string; description: string }[], model: string): Promise<string> {
-    const fixInstructions = fixesToApply.map(fix => `**${fix.label}**: ${fix.description}`).join('\n- ');
-
+export async function fixLatexPaper(paperContent: string, fixesToApply: { key: string; label: string; description: string }[], model: string, manualInstruction?: string): Promise<string> {
     const examples = getCompilationExamplesForPrompt();
     const examplesPrompt = formatExamplesForPrompt(examples);
 
@@ -420,8 +418,7 @@ export async function fixLatexPaper(paperContent: string, fixesToApply: { key: s
 
     **Instructions for Fixing:**
     -   You will receive the full LaTeX source code of a paper.
-    -   You MUST apply the following specific fixes to the document:
-        -   ${fixInstructions}
+    -   You must analyze the code and apply corrections based on the user's request.
     -   The entire output MUST be a single, valid, and complete LaTeX document. Do not include any explanatory text, markdown formatting, or code fences (like \`\`\`latex) before \`\\documentclass\` or after \`\\end{document}\`.
     -   Maintain the exact LaTeX preamble, author information, title, and metadata structure as in the original. Do NOT change \\documentclass, \\usepackage, \\hypersetup, \\title, \\author, \\date, \\maketitle.
     -   **CRITICAL: Absolutely DO NOT use the \`\\begin{thebibliography}\`, \`\\end{thebibliography}\`, or \`\\bibitem\` commands anywhere in the document. The references MUST be formatted as a plain, unnumbered list directly following \`\\section{Referências}\`.**
@@ -432,7 +429,18 @@ export async function fixLatexPaper(paperContent: string, fixesToApply: { key: s
     ${examplesPrompt}
     `;
 
-    const userPrompt = `Current LaTeX Paper:\n\n${paperContent}\n\nApply the specified fixes and provide the complete, corrected LaTeX source code.`;
+    let userPrompt = `Current LaTeX Paper:\n\n${paperContent}\n\n`;
+
+    if (fixesToApply.length > 0) {
+        const fixInstructions = fixesToApply.map(fix => `**${fix.label}**: ${fix.description}`).join('\n- ');
+        userPrompt += `First, apply the following general fixes if applicable:\n- ${fixInstructions}\n\n`;
+    }
+
+    if (manualInstruction) {
+        userPrompt += `Next, and most importantly, apply this specific correction based on the user's feedback. This instruction has the highest priority:\n\n"${manualInstruction}"\n\n`;
+    }
+
+    userPrompt += `Provide the complete, corrected LaTeX source code as your final output.`;
 
     const response = await callModel(model, systemInstruction, userPrompt);
     let paper = response.text.trim().replace(/^```latex\s*|```\s*$/g, '');

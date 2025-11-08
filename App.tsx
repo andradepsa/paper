@@ -95,6 +95,11 @@ const App: React.FC = () => {
     const [compiledPdfFile, setCompiledPdfFile] = useState<File | null>(null);
     const [selectedStyle, setSelectedStyle] = useState<StyleGuide>('abnt');
     const [isReformatting, setIsReformatting] = useState(false);
+    const [isRecompileModalOpen, setIsRecompileModalOpen] = useState(false);
+    const [articleForRecompilation, setArticleForRecompilation] = useState<ArticleLogEntry | null>(null);
+    const [recompilePrompt, setRecompilePrompt] = useState('');
+    const [isFixingLatex, setIsFixingLatex] = useState(false);
+    const [recompileError, setRecompileError] = useState<string | null>(null);
 
 
     // == STEP 3: UPLOAD STATE ==
@@ -621,11 +626,39 @@ const App: React.FC = () => {
             alert("O código LaTeX para este artigo não foi encontrado. Não é possível recompilar.");
             return;
         }
-        setLatexCode(articleToRecompile.latexCode);
-        setCompilationStatus(null);
-        setPdfPreviewUrl('');
-        setCompiledPdfFile(null);
-        setStep(2);
+        setArticleForRecompilation(articleToRecompile);
+        setRecompilePrompt('');
+        setRecompileError(null);
+        setIsRecompileModalOpen(true);
+    };
+
+    const handleRecompileWithPrompt = async () => {
+        if (!articleForRecompilation || !articleForRecompilation.latexCode) return;
+    
+        setIsFixingLatex(true);
+        setRecompileError(null);
+    
+        try {
+            const fixedCode = await fixLatexPaper(
+                articleForRecompilation.latexCode,
+                FIX_OPTIONS, // Pass all available fix options as a baseline
+                analysisModel, // Use the faster model for fixing
+                recompilePrompt
+            );
+    
+            setLatexCode(fixedCode);
+            setCompilationStatus(<div className="status-message status-info">✅ Código corrigido pela IA! Revise e compile novamente.</div>);
+            setPdfPreviewUrl('');
+            setCompiledPdfFile(null);
+            setStep(2);
+            setIsRecompileModalOpen(false);
+    
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro desconhecido durante a correção.";
+            setRecompileError(errorMessage);
+        } finally {
+            setIsFixingLatex(false);
+        }
     };
 
     const handleProceedToCompile = () => {
@@ -930,6 +963,56 @@ Este arquivo explica como usar os arquivos \`successful_compilations.json\` e \`
     
     return (
         <div className="container">
+            {isRecompileModalOpen && articleForRecompilation && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-8">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-4">Corrigir LaTeX com IA</h2>
+                        <p className="text-gray-600 mb-2">Artigo: <span className="font-semibold">{articleForRecompilation.title}</span></p>
+                        <p className="text-gray-600 mb-6">Descreva o erro de compilação ou dê uma instrução para a IA corrigir o código LaTeX. Por exemplo: "Havia um erro de 'missing }' no abstract, encontre e corrija."</p>
+
+                        <div className="space-y-4">
+                            <label htmlFor="recompile-prompt" className="font-semibold block">Comando de Correção:</label>
+                            <textarea
+                                id="recompile-prompt"
+                                rows={4}
+                                value={recompilePrompt}
+                                onChange={(e) => setRecompilePrompt(e.target.value)}
+                                placeholder="Ex: Corrija o erro de ambiente 'equation' que não foi fechado."
+                                className="w-full"
+                            />
+                        </div>
+
+                        {recompileError && (
+                            <div className="status-message status-error mt-4">{recompileError}</div>
+                        )}
+
+                        <div className="flex justify-end gap-4 mt-8">
+                            <button
+                                onClick={() => setIsRecompileModalOpen(false)}
+                                className="btn"
+                                style={{ backgroundColor: '#e5e7eb', color: '#374151' }}
+                                disabled={isFixingLatex}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleRecompileWithPrompt}
+                                className="btn btn-primary"
+                                disabled={isFixingLatex || !recompilePrompt.trim()}
+                            >
+                                {isFixingLatex ? (
+                                    <>
+                                        <span className="spinner"></span>
+                                        Corrigindo...
+                                    </>
+                                ) : (
+                                    'Corrigir e Ir para Compilador'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             <ApiKeyModal
                 isOpen={isApiModalOpen}
                 onClose={() => setIsApiModalOpen(false)}

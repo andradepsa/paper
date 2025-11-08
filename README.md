@@ -6,7 +6,7 @@
 
 ## 1. Introduction
 
-The "Advanced Scientific Paper Generator" is a powerful, AI-driven application designed to drastically simplify the scientific paper creation process. Starting with a broad mathematical topic, the tool generates an innovative paper title and then drafts a complete LaTeX document based on that title. What truly sets this tool apart is its multi-iteration analysis system, which rigorously evaluates the generated paper against 28 distinct quality metrics. Based on this analysis, the AI iteratively refines the paper, ensuring a high standard of academic quality and consistency. To top it off, it includes a dedicated "Fixer" tool to resolve common LaTeX compilation issues.
+The "Advanced Scientific Paper Generator" is a powerful, AI-driven application designed to drastically simplify the scientific paper creation process. Starting with a broad mathematical topic, the tool generates an innovative paper title and then drafts a complete LaTeX document based on that title. What truly sets this tool apart is its multi-iteration analysis system, which rigorously evaluates the generated paper against 29 distinct quality metrics. Based on this analysis, the AI iteratively refines the paper, ensuring a high standard of academic quality and consistency. To top it off, it includes a dedicated "Fixer" tool to resolve common LaTeX compilation issues.
 
 This tool is ideal for researchers, students, and academics looking for an intelligent assistant to kickstart their writing process, refine drafts, or explore new research directions with AI-generated insights.
 
@@ -22,7 +22,7 @@ ORCID: https://orcid.org/0009-0004-2555-3178
 
 *   **AI Title Generation:** Generates a novel and high-impact research paper title from a broad mathematical topic.
 *   **Complete LaTeX Paper Generation:** Produces a full scientific paper, including an abstract, introduction, methodology, results, discussion, conclusion, and a formatted bibliography, all in valid LaTeX.
-*   **Iterative Quality Analysis:** Performs up to 12 analysis iterations, evaluating the paper on 28 quality metrics (e.g., Topic Focus, Writing Clarity, Methodological Rigor, LaTeX Technical Accuracy).
+*   **Iterative Quality Analysis:** Performs up to 12 analysis iterations, evaluating the paper on 29 quality metrics (e.g., Topic Focus, Writing Clarity, Methodological Rigor, LaTeX Technical Accuracy).
 *   **Intelligent Paper Improvement:** Based on the analysis, the AI iteratively refines the LaTeX source code to address identified weaknesses.
 *   **Early Analysis Completion:** The analysis process stops early if the paper reaches a high quality standard (no "red" scores), saving time and computational resources.
 *   **Multi-language Support:** Generate papers and receive feedback in Portuguese, English, Spanish, or French.
@@ -67,7 +67,7 @@ This is the crucial step where the paper generation and iterative analysis proce
 *   **Process Flow (What to expect):**
     1.  **"Generating Title...":** The application will first generate a new and impactful title based on a randomly selected mathematical topic. You will see this title displayed in the "Results" section once it's ready.
     2.  **"Generating Paper...":** Next, the AI will write the complete scientific paper in LaTeX format, using the generated title and consulting external sources via Google Search to ground the content and bibliography.
-    3.  **"Analyzing...":** The main iterative process begins. The AI will analyze the paper against the 28 metrics, provide detailed feedback, and then attempt to improve the paper. This cycle will repeat for several iterations (up to 12).
+    3.  **"Analyzing...":** The main iterative process begins. The AI will analyze the paper against the 29 metrics, provide detailed feedback, and then attempt to improve the paper. This cycle will repeat for several iterations (up to 12).
 *   **Progress Bar:** A progress bar will appear in the "Results" section, showing the overall progress of the generation and analysis.
 *   **Early Analysis Completion:** If the paper reaches a high quality standard (no "red" scores) before all iterations are completed, a **"✅ Analysis complete!"** message will appear, and the process will stop early, saving you time.
 

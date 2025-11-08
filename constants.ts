@@ -48,7 +48,12 @@ export const ANALYSIS_TOPICS: AnalysisTopic[] = [
     { num: 25, name: 'THEORETICAL FOUNDATION', desc: 'Strength and relevance of the theoretical framework underpinning the research' },
     { num: 26, name: 'SCIENTIFIC CONTENT ACCURACY', desc: 'Verification of the accuracy and correctness of scientific information, data, and claims presented' },
     { num: 27, name: 'DEPTH OF CRITICAL ANALYSIS', desc: 'Evaluation of the depth and insightfulness of the critical analysis, including questioning assumptions and exploring alternative interpretations' },
-    { num: 28, name: 'PAGE COUNT COMPLIANCE', desc: 'Verifies that the generated paper\'s length meets the number of pages requested by the user.' }
+    { num: 28, name: 'PAGE COUNT COMPLIANCE', desc: 'Verifies that the generated paper\'s length meets the number of pages requested by the user.' },
+    {
+        num: 29,
+        name: 'PARAGRAPH INTEGRITY VERIFICATION',
+        desc: "Selecione um parágrafo substancial do corpo do artigo para verificação. Verifique se o texto selecionado está contido integralmente no código-fonte LaTeX e se está devidamente enquadrado na formatação de parágrafo. Critérios obrigatórios: 1. O texto deve estar exatamente presente no código LaTeX, sem omissões, trocas de palavras, pontuação ou acentuação. 2. O texto deve estar dentro de um bloco de parágrafo válido: não fragmentado por comandos LaTeX (\\section, \\subsection, etc.), delimitado por uma linha em branco antes e depois, sem quebras manuais (\\\\), e sem comentários (%). No campo 'improvement', use uma das seguintes respostas: Se estiver correto, responda: 'Texto integralmente presente e formatado corretamente em parágrafo LaTeX.'. Se houver divergências, responda: 'Texto NÃO conforme.', e detalhe a seção e qual o problema (ex: texto interrompido por comando). Analise o documento LaTeX inteiro."
+    }
 ];
 
 // Fix: Add FIX_OPTIONS to be exported for use in FixModal.tsx

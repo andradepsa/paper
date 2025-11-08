@@ -218,20 +218,22 @@ export async function generateInitialPaper(title: string, language: Language, pa
         \\usepackage{amsmath, amssymb, setspace, url, verbatim}
         \\usepackage{hyperref}
         \`\`\`
-    3.  **PDF Metadata (Crucial):** Immediately after the preamble, you MUST add a \`\\hypersetup\` block.
-        -   The \`pdfsubject\` field MUST contain the **full, complete abstract (Resumo)** of the paper. It must not contain any LaTeX commands.
+    3.  **PDF Metadata and Title (Crucial):** Immediately after the preamble, you MUST add both a \`\\hypersetup\` block and a \`\\title{...}\` command.
+        -   The \`\\hypersetup\` block's \`pdftitle\` MUST be exactly: \`pdftitle={${title}}\`.
+        -   The \`\\title\` command MUST be exactly: \`\\title{${title}}\`.
+        -   The \`pdfsubject\` field MUST contain the **full, complete abstract (Resumo)** of the paper, without any LaTeX commands.
         -   The \`pdfkeywords\` field must contain the keywords, separated by commas.
-        -   The \`pdftitle\` must match the paper's title.
         -   The \`pdfauthor\` MUST be exactly "SÉRGIO DE ANDRADE, PAULO".
-        
-        **Example of the required \`\\hypersetup\` block:**
+
+        **Example of the required block:**
         \`\`\`latex
         \\hypersetup{
-          pdftitle={The Title of the Paper},
+          pdftitle={${title}},
           pdfauthor={SÉRGIO DE ANDRADE, PAULO},
           pdfsubject={O resumo completo do artigo, em um único parágrafo, vai aqui. Deve ser idêntico ao resumo que aparece visualmente no documento.},
           pdfkeywords={Palavra-chave1, Palavra-chave2, Palavra-chave3}
         }
+        \\title{${title}}
         \`\`\`
     4.  **Document Start:** The document body must begin with \`\\begin{document}\` followed immediately by \`\\onehalfspacing\`.
     5.  **Title and Author Block (NO \\maketitle):** You MUST NOT use the \`\\maketitle\` command. Instead, create the title block manually at the very start of the document body, formatted exactly as follows:

@@ -67,6 +67,11 @@ export const FIX_OPTIONS: { key: string; label: string; description: string }[] 
         key: 'preamble_check',
         label: 'Verify Preamble',
         description: 'Checks if the document preamble uses only the allowed packages in the correct order as specified by the generation rules.'
+    },
+    {
+        key: 'page_margin_overflow',
+        label: 'Fix Page Margin Overflows',
+        description: 'Analyzes the document for text, URLs, or other content that exceeds the page margins (overfull \\hbox) and rewrites it to fit. This may involve rephrasing sentences, breaking long words or identifiers, or using LaTeX commands like \\sloppy or \\url{} to improve line breaking.'
     }
 ];
 

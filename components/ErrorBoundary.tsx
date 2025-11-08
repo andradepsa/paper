@@ -1,4 +1,4 @@
-import React, { ReactNode, ErrorInfo } from 'react';
+import React, { Component, ReactNode, ErrorInfo } from 'react';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -10,11 +10,10 @@ interface ErrorBoundaryState {
   errorInfo: ErrorInfo | null;
 }
 
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // FIX: Changed `extends Component` to `extends React.Component` to resolve
-  // type errors where 'setState' and 'props' were not found on the component instance.
-  // This ensures the class correctly inherits from React's Component base class,
-  // avoiding potential import resolution issues in the build environment.
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  // FIX: Changed `extends React.Component` to `extends Component` and imported `Component` directly from React.
+  // This resolves type errors where 'setState' and 'props' were not found on the component instance,
+  // ensuring the class correctly inherits from React's Component base class.
   state: ErrorBoundaryState = {
     hasError: false,
     error: null,

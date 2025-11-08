@@ -362,7 +362,14 @@ export async function fixLatexPaper(paperContent: string, fixesToApply: { key: s
     const titleMatch = paperContent.match(/\\title\{([^}]+)\}/);
     const originalTitle = titleMatch ? titleMatch[1] : 'the original title';
 
+    const hasPageMarginFix = fixesToApply.some(fix => fix.key === 'page_margin_overflow');
+    const priorityInstruction = hasPageMarginFix 
+        ? `**HIGHEST PRIORITY: Your most important task is to fix page margin overflows.** These are often reported as "overfull \\hbox" errors in LaTeX logs. Scrutinize every line of the document for words, URLs, or mathematical expressions that are too long to fit within the text width. Aggressively apply fixes: rephrase sentences, suggest hyphenation for long words (e.g., using \`\\-\`), enclose URLs in \`\\url{...}\` commands, and break long inline equations if necessary. Be proactive in identifying potential overflow issues even if they are not immediately obvious.`
+        : '';
+
     const systemInstruction = `You are an expert LaTeX editor AI. Your task is to fix common compilation issues in a given LaTeX document, while strictly preserving its ABNT formatting.
+
+    ${priorityInstruction}
 
     **Critical Preservation Rules:**
     1.  **Do Not Change Preamble/Metadata:** The entire block from \`\\documentclass\` to \`\\title{...}\` MUST be preserved exactly as in the original. This includes the \`\\hypersetup\` block and the title command, which must be \`\\title{${originalTitle}}\`.

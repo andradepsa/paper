@@ -28,14 +28,15 @@ type Author = {
 
 type ArticleLogEntry = {
     id: string;
-    status: 'published' | 'unpublished';
+    status: 'published' | 'unpublished' | 'compilation-failed';
     title: string;
     date: string;
     // For published
     doi?: string;
     link?: string;
-    // For unpublished
+    // For unpublished or compilation-failed
     latexCode?: string;
+    // For unpublished
     pdfBase64?: string;
 };
 
@@ -494,9 +495,20 @@ const App: React.FC = () => {
                     finalFixedCode = result.finalCode;
                 } catch (error) {
                     const errorMessage = error instanceof Error ? error.message : 'Falha na compilação por motivo desconhecido.';
-                    setGenerationStatus(`❌ Falha na compilação do Artigo ${i}. O código foi salvo como exemplo de erro. Pulando para o próximo...`);
+                    setGenerationStatus(`Artigo ${i}/${articlesToProcess}: ❌ Falha na compilação: ${errorMessage}. Salvando para tentativa posterior.`);
                     console.error(`Compilation failed for paper ${i}:`, error);
-                    await new Promise(resolve => setTimeout(resolve, 4000)); 
+
+                    const metadataForTitle = extractMetadata(finalPaperCode, true);
+
+                    const newLogEntry: ArticleLogEntry = {
+                        id: new Date().toISOString() + Math.random(),
+                        status: 'compilation-failed',
+                        title: metadataForTitle.title || generatedTitle || "Untitled Article",
+                        date: new Date().toISOString(),
+                        latexCode: finalPaperCode,
+                    };
+                    setArticlesLog(prev => [...prev, newLogEntry]);
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                     continue;
                 }
                 
@@ -604,6 +616,18 @@ const App: React.FC = () => {
         }
     };
     
+    const handleRecompile = (articleToRecompile: ArticleLogEntry) => {
+        if (!articleToRecompile.latexCode) {
+            alert("O código LaTeX para este artigo não foi encontrado. Não é possível recompilar.");
+            return;
+        }
+        setLatexCode(articleToRecompile.latexCode);
+        setCompilationStatus(null);
+        setPdfPreviewUrl('');
+        setCompiledPdfFile(null);
+        setStep(2);
+    };
+
     const handleProceedToCompile = () => {
         isGenerationCancelled.current = true;
         setLatexCode(finalLatexCode);
@@ -1258,8 +1282,10 @@ Este arquivo explica como usar os arquivos \`successful_compilations.json\` e \`
                                                         Ver DOI
                                                     </a>
                                                 </div>
-                                            ) : (
+                                            ) : article.status === 'unpublished' ? (
                                                 <span className="px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-100 rounded-full">Não Publicado</span>
+                                            ) : (
+                                                <span className="px-2 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full">Falha na Compilação</span>
                                             )}
                                         </td>
                                         <td className="py-3 px-4">
@@ -1277,6 +1303,14 @@ Este arquivo explica como usar os arquivos \`successful_compilations.json\` e \`
                                                     ) : (
                                                         'Publicar'
                                                     )}
+                                                </button>
+                                            )}
+                                            {article.status === 'compilation-failed' && (
+                                                <button
+                                                    onClick={() => handleRecompile(article)}
+                                                    className="btn btn-primary text-sm py-1 px-3"
+                                                >
+                                                    Recompilar
                                                 </button>
                                             )}
                                         </td>

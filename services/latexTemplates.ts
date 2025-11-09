@@ -10,6 +10,7 @@ export const SINGLE_LATEX_TEMPLATE: string =
 \\usepackage{setspace}
 \\usepackage{url}
 \\usepackage{hyperref}
+\\usepackage{ragged2e}
 
 \\hypersetup{
   pdftitle={[TÍTULO DO ARTIGO AQUI]},
@@ -53,6 +54,6 @@ export const SINGLE_LATEX_TEMPLATE: string =
 [CONTEÚDO DA CONCLUSÃO AQUI]
 
 \\section*{REFERÊNCIAS}
-[LISTA DE REFERÊNCIAS BIBLIOGRÁFICAS AQUI]
+{\\justify [LISTA DE REFERÊNCIAS BIBLIOGRÁFICAS AQUI]\n}
 
 \\end{document}`;

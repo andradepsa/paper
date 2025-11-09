@@ -198,7 +198,7 @@ export async function generateInitialPaper(title: string, language: Language, pa
 
     **Your Task:**
     1.  **Use the Provided Template:** You are provided with a single, high-quality, pre-approved LaTeX template that is guaranteed to be compliant with ABNT standards for scientific articles (A4 format). You MUST use this template to structure the paper.
-    2.  **Generate Content & Bibliography:** Based on the user-provided title, generate a complete, comprehensive, and high-quality scientific paper. This includes all sections from abstract to conclusion. For the bibliography, you MUST use the Google Search tool to find **excellent academic sources** to create a credible bibliography with **exactly ${referenceCount} entries**.
+    2.  **Generate Content & Bibliography:** Based on the user-provided title, generate a complete, comprehensive, and high-quality scientific paper. This includes all sections from abstract to conclusion. For the bibliography, you MUST use the Google Search tool to find **excellent academic sources** to create a credible bibliography with **at least ${referenceCount} entries**.
     3.  **Source Quality Mandate (CRITICAL):** The quality of the references is paramount. You MUST prioritize sources that are:
         -   **Peer-reviewed academic journals** (e.g., from publishers like Elsevier, Springer, IEEE, Nature, Science).
         -   **Official university repositories and preprint servers** (e.g., arXiv.org, university .edu domains).
@@ -216,7 +216,7 @@ export async function generateInitialPaper(title: string, language: Language, pa
         **Correct Formatting Examples:**
         - **Journal Article:** \`SHARP, R. Y.; VÁMOS, P. Baire's category theorem and prime avoidance in complete local rings. \\textit{Archiv der Mathematik}, v. 44, n. 1, p. 243-248, 1985.\`
         - **Book:** \`ZARISKI, O.; SAMUEL, P. \\textit{Commutative Algebra}. New York: Springer-Verlag, 1958. v. 1.\`
-    5.  **Populate the Template:** You MUST replace all placeholder text within the provided template (e.g., \`[CONTEÚDO DA INTRODUÇÃO AQUI]\`, \`[TÍTULO DO ARTIGO AQUI]\`). For the bibliography, you must generate a list of exactly ${referenceCount} entries, each formatted correctly, and insert the entire list in place of the single placeholder \`[LISTA DE REFERÊNCIAS BIBLIOGRÁFICAS AQUI]\`. Each reference in the list should be separated by a blank line.
+    5.  **Populate the Template:** You MUST replace all placeholder text within the provided template (e.g., \`[CONTEÚDO DA INTRODUÇÃO AQUI]\`, \`[TÍTULO DO ARTIGO AQUI]\`). For the bibliography, you must generate a list of at least ${referenceCount} entries, each formatted correctly, and insert the entire list in place of the single placeholder \`[LISTA DE REFERÊNCIAS BIBLIOGRÁFICAS AQUI]\`. Each reference in the list should be separated by a blank line.
     6.  **Meet Page Count:** The generated content must be substantial enough to ensure the final rendered PDF is **at least ${pageCount} pages** long.
     7.  **Strict Output Format:** The ENTIRE output MUST be ONLY the completed LaTeX code. Do not add any explanation, markdown formatting (like \`\`\`latex\`), or any text before \`\\documentclass\` or after \`\\end{document}\`.
 

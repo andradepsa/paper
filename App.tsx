@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { generateInitialPaper, analyzePaper, improvePaper, generatePaperTitle, fixLatexPaper, reformatPaperWithStyleGuide } from './services/geminiService';
 import type { Language, IterationAnalysis, PaperSource, AnalysisResult, StyleGuide } from './types';
@@ -207,58 +208,70 @@ const App: React.FC = () => {
     }, [isSchedulerActive]); // This effect depends only on the active status
 
     // FIX: Add the missing extractMetadata function to parse LaTeX content.
-    const extractMetadata = (latex: string, forUpload: boolean = false): { title: string, abstract: string, authors: Author[], keywords: string } => {
-        let title = '';
-        const titleMatch1 = latex.match(/\\title\{([^}]+)\}/);
-        if (titleMatch1) {
-            title = titleMatch1[1];
-        } else {
-            const titleMatch2 = latex.match(/\\textbf\{\\MakeUppercase\{([^}]+)\}\}/);
-            if (titleMatch2) title = titleMatch2[1];
-        }
-
-        const abstractMatch = latex.match(/\\begin\{abstract\}\n([\s\S]*?)\n\\end\{abstract\}/) || latex.match(/\\begin\{center\}\\textbf\{RESUMO\}\\end\{center\}\n([\s\S]*?)\n\n\\noindent\\textbf\{Palavras-chave:/);
-        
-        let keywords = '';
-        const keywordsMatch1 = latex.match(/\\textbf\{Keywords:\}\s*([^\\n]+)/);
-        if (keywordsMatch1) {
-            keywords = keywordsMatch1[1].replace(/\.$/, '').trim();
-        } else {
-            const keywordsMatch2 = latex.match(/\\textbf\{Palavras-chave:\}\s*([^.]+)\./);
-            if (keywordsMatch2) keywords = keywordsMatch2[1].trim();
-        }
-
-        const authors: Author[] = [];
-        let authorBlockMatch = latex.match(/\\author\{([\s\S]*?)\}/);
-        if (!authorBlockMatch) {
-            authorBlockMatch = latex.match(/\\begin\{flushright\}([\s\S]*?)\\end\{flushright\}/);
-        }
-
-        if (authorBlockMatch) {
-            const authorLines = authorBlockMatch[1].trim().split(/\\\\/);
-            authorLines.forEach(line => {
-                const trimmedLine = line.trim();
-                if (!trimmedLine) return;
-
-                const nameMatch = trimmedLine.match(/^(.*?)(?:\\small|$)/);
-                if (nameMatch && nameMatch[1].trim()) {
-                    const name = nameMatch[1].trim();
-                    const orcidMatch = trimmedLine.match(/\\url\{https?:\/\/orcid\.org\/([^}]+)\}/);
-                    authors.push({
-                        name: name,
-                        affiliation: '',
-                        orcid: orcidMatch ? orcidMatch[1] : ''
-                    });
-                }
-            });
-        }
-
-        return {
-            title: title.trim(),
-            abstract: abstractMatch ? abstractMatch[1].trim() : '',
-            authors: authors,
-            keywords: keywords
+    const extractMetadata = (latex: string): { title: string, abstract: string, authors: Author[], keywords: string } => {
+        const metadata = {
+            title: '',
+            abstract: '',
+            authors: [] as Author[],
+            keywords: ''
         };
+    
+        // 1. Robustly extract the content of the \hypersetup block
+        const hypersetupMatch = latex.match(/\\hypersetup\{([\s\S]*?)\}/);
+        if (hypersetupMatch) {
+            const setupContent = hypersetupMatch[1];
+    
+            // Helper to parse a key-value pair from the hypersetup content
+            const parseKey = (key: string): string => {
+                // This regex handles values that are in braces {} or just comma/newline separated
+                const regex = new RegExp(`${key}=\\{([^}]+)\\}|${key}=([^,}]+)`, 'm');
+                const match = setupContent.match(regex);
+                if (match) {
+                    // Return the first captured group that is not undefined
+                    return (match[1] || match[2] || '').trim();
+                }
+                return '';
+            };
+    
+            metadata.title = parseKey('pdftitle');
+            metadata.abstract = parseKey('pdfsubject');
+            metadata.keywords = parseKey('pdfkeywords');
+            
+            const authorString = parseKey('pdfauthor');
+            if (authorString) {
+                // The ORCID is not in the pdfauthor field, so we find it separately
+                const orcidMatch = latex.match(/\\url\{https?:\/\/orcid\.org\/([^}]+)\}/);
+                metadata.authors.push({
+                    name: authorString,
+                    affiliation: '', // Not present in template
+                    orcid: orcidMatch ? orcidMatch[1] : ''
+                });
+            }
+        }
+    
+        // Fallback for title if hypersetup fails (less reliable)
+        if (!metadata.title) {
+            const titleMatch = latex.match(/\\title\{([^}]+)\}/);
+            if (titleMatch) metadata.title = titleMatch[1];
+        }
+
+        // Fallback for author if hypersetup fails (less reliable)
+        if (metadata.authors.length === 0) {
+            const authorBlockMatch = latex.match(/\\begin\{flushright\}([\s\S]*?)\\end\{flushright\}/);
+            if (authorBlockMatch) {
+                const nameMatch = authorBlockMatch[1].match(/^\s*(.*?)\s*\\\\/);
+                const orcidMatch = authorBlockMatch[1].match(/\\url\{https?:\/\/orcid\.org\/([^}]+)\}/);
+                 if (nameMatch && nameMatch[1]) {
+                     metadata.authors.push({
+                         name: nameMatch[1].trim(),
+                         affiliation: '',
+                         orcid: orcidMatch ? orcidMatch[1] : ''
+                     });
+                 }
+            }
+        }
+
+        return metadata;
     };
 
     const getScoreClass = (score: number) => {
@@ -392,7 +405,7 @@ const App: React.FC = () => {
         
         statusUpdater("Publicando no Zenodo...");
         // FIX: Replaced call to non-existent 'extractMetadata' with the newly defined function.
-        const metadataForUpload = extractMetadata(articleLatexCode, true);
+        const metadataForUpload = extractMetadata(articleLatexCode);
         const keywordsForUpload = articleLatexCode.match(/\\keywords\{([^}]+)\}/)?.[1] || '';
 
         const MAX_UPLOAD_RETRIES = 10;
@@ -841,126 +854,92 @@ const App: React.FC = () => {
                      <div>
                         <Section title="Configuração" stepNumber={1}>
                              <LanguageSelector languages={LANGUAGES} selectedLanguage={language} onSelect={setLanguage} />
-                             <ModelSelector models={AVAILABLE_MODELS} selectedModel={generationModel} onSelect={setGenerationModel} label="Modelo para Geração e Melhoria (Potente)" />
-                             <ModelSelector models={AVAILABLE_MODELS} selectedModel={analysisModel} onSelect={setAnalysisModel} label="Modelo para Análise e Título (Rápido)" />
+                             <ModelSelector
+                                models={AVAILABLE_MODELS}
+                                selectedModel={generationModel}
+                                onSelect={setGenerationModel}
+                                label="Modelo de Geração (Mais Poderoso)"
+                             />
+                             <ModelSelector
+                                models={AVAILABLE_MODELS}
+                                selectedModel={analysisModel}
+                                onSelect={setAnalysisModel}
+                                label="Modelo de Análise (Mais Rápido)"
+                             />
                              <PageSelector options={[12, 30, 60, 100]} selectedPageCount={pageCount} onSelect={setPageCount} />
                         </Section>
 
-                        <Section title="Iniciar Geração" stepNumber={2} contentClassName="text-center">
-                            <ActionButton 
-                                onClick={generatePaper}
-                                disabled={isGenerating}
-                                isLoading={isGenerating}
-                                text="Gerar Artigo Completo"
-                                loadingText="Gerando..."
-                            />
-                             {isGenerating && <button onClick={handleCancel} className="mt-4 text-sm text-red-600 hover:underline">Cancelar Geração</button>}
-                        </Section>
-                        
-                         <Section title="Automação Diária" stepNumber={3} contentClassName='text-center'>
-                             <p className="text-gray-600 mb-4 text-sm">
-                                {isSchedulerActive 
-                                    ? "O agendador está ATIVO. Um lote de 7 artigos será gerado e publicado automaticamente todos os dias às 3h da manhã."
-                                    : "O agendador está INATIVO. Ative para gerar e publicar artigos automaticamente."}
-                            </p>
-                             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                                <button onClick={handleSchedulerToggle} className={`px-6 py-3 rounded-lg font-bold text-white transition-all ${isSchedulerActive ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}>
-                                    {isSchedulerActive ? 'Desativar Agendador' : 'Ativar Agendador'}
-                                </button>
-                                 <button onClick={() => handleFullAutomation(numberOfArticles)} disabled={isGenerating} className="px-6 py-3 rounded-lg font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400">
-                                     {isGenerating ? 'Aguarde...' : `Rodar Automação Manualmente`}
-                                 </button>
-                             </div>
-                              <div className="mt-4">
-                                <label htmlFor="num-articles" className="text-sm text-gray-600 mr-2">Artigos por execução manual:</label>
-                                <input id="num-articles" type="number" min="1" max="100" value={numberOfArticles} onChange={e => setNumberOfArticles(parseInt(e.target.value, 10))} className="w-20 p-1 border rounded" />
+                        <Section title="Ações" stepNumber={2}>
+                             <div className="text-center">
+                                 <ActionButton
+                                     onClick={generatePaper}
+                                     disabled={isGenerating}
+                                     isLoading={isGenerating}
+                                     text="Gerar Artigo Completo"
+                                     loadingText="Gerando..."
+                                     completed={isGenerationComplete}
+                                 />
+                                 {isGenerating && (
+                                     <button onClick={handleCancel} className="mt-4 text-sm text-red-600 hover:underline">
+                                         Cancelar Geração
+                                     </button>
+                                 )}
                              </div>
                         </Section>
-                     </div>
-                     
-                     <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-                         <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">Resultados da Geração</h2>
-                          {generationStatus && (
-                            <div className={`p-4 rounded-lg mb-4 text-center font-semibold ${generationStatus.includes('Erro') ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
-                                {generationStatus}
+                        {finalLatexCode && isGenerationComplete && (
+                            <div className="mt-4">
+                                <SourceDisplay sources={paperSources} />
                             </div>
                         )}
-                         <ProgressBar progress={generationProgress} isVisible={isGenerating || isGenerationComplete} />
-                        
-                         {generatedTitle && <p className="mb-4 text-center font-bold text-indigo-700">"{generatedTitle}"</p>}
-                        
-                         <div className="grid grid-cols-1 gap-6">
-                            {finalLatexCode && (
-                                <div>
-                                    <h3 className="font-semibold text-lg mb-2">Código LaTeX Final</h3>
-                                    <textarea readOnly value={finalLatexCode} className="w-full h-48 font-mono text-xs p-2 border rounded bg-gray-50"></textarea>
-                                    <SourceDisplay sources={paperSources} />
-                                </div>
-                            )}
-                             {analysisResults.length > 0 && (
-                                <div>
-                                    <h3 className="font-semibold text-lg mb-2">Análise Iterativa</h3>
-                                    <ResultsDisplay analysisResults={analysisResults} totalIterations={TOTAL_ITERATIONS} />
-                                </div>
-                            )}
-                         </div>
                      </div>
-                </div>
+
+                     <div>
+                        <Section title="Resultados da Análise" stepNumber={3}>
+                             <p className="text-gray-600 mb-4 pl-1">
+                                O artigo é analisado e refinado iterativamente. Acompanhe o progresso e as sugestões de melhoria aqui.
+                            </p>
+                            <ProgressBar progress={generationProgress} isVisible={isGenerating || isGenerationComplete} />
+                            {generationStatus && <p className="text-center font-semibold my-2">{generationStatus}</p>}
+                            
+                            <ResultsDisplay analysisResults={analysisResults} totalIterations={TOTAL_ITERATIONS} />
+                        </Section>
+                     </div>
+                 </div>
             </div>
 
-            {/* Step 2: Compile & Edit */}
+            {/* Step 2: Compilation & Editing */}
             <div className={`${step !== 2 ? 'hidden' : ''}`}>
-                 <Section title="Editar Código LaTeX" stepNumber={1}>
+                 <Section title="Compilar & Editar LaTeX" stepNumber={1}>
                     <LatexCompiler code={latexCode} onCodeChange={setLatexCode} />
-                 </Section>
-                 
-                 <Section title="Compilar & Visualizar" stepNumber={2}>
-                    <div className="text-center mb-4">
-                        <button onClick={handleCompileClick} disabled={isCompiling} className="btn-primary">
-                             {isCompiling && <span className="spinner"></span>}
-                             {isCompiling ? "Compilando..." : "Extrair Metadados & Compilar para PDF"}
+                    <div className="mt-6 flex flex-wrap justify-center items-center gap-4">
+                         <StyleGuideSelector guides={STYLE_GUIDES} selectedGuide={selectedStyle} onSelect={setSelectedStyle} />
+                         <ActionButton
+                            onClick={handleReformatClick}
+                            disabled={isReformatting || !latexCode}
+                            isLoading={isReformatting}
+                            text="Reformatar Referências"
+                            loadingText="Formatando..."
+                         />
+                    </div>
+                    <div className="mt-6 text-center">
+                        <ActionButton
+                            onClick={handleCompileClick}
+                            disabled={isCompiling}
+                            isLoading={isCompiling}
+                            text="Compilar para PDF"
+                            loadingText="Compilando..."
+                        />
+                         <button onClick={sendToOverleaf} className="mt-4 text-sm text-blue-600 hover:underline">
+                            Enviar para Overleaf
                         </button>
                     </div>
-                     {compilationStatus && <div className="text-center my-4 font-semibold">{compilationStatus}</div>}
-
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 items-start">
-                         <div>
-                             <h3 className="font-bold text-lg mb-2">Metadados Extraídos</h3>
-                             <div className="space-y-2 p-4 bg-gray-50 rounded-lg border">
-                                <p><strong>Título:</strong> {extractedMetadata.title || 'N/A'}</p>
-                                <p><strong>Palavras-chave:</strong> {extractedMetadata.keywords || 'N/A'}</p>
-                             </div>
-                         </div>
-                         <div>
-                            <h3 className="font-bold text-lg mb-2">Reformatar Referências</h3>
-                             <div className="p-4 bg-gray-50 rounded-lg border space-y-3">
-                                <StyleGuideSelector guides={STYLE_GUIDES} selectedGuide={selectedStyle} onSelect={setSelectedStyle} />
-                                 <button onClick={handleReformatClick} disabled={isReformatting} className="w-full btn-primary text-sm py-2">
-                                     {isReformatting ? "Reformatando..." : `Aplicar Estilo ${selectedStyle.toUpperCase()}`}
-                                 </button>
-                            </div>
-                         </div>
-                     </div>
-
-                     {pdfPreviewUrl && (
-                        <div className="mt-6">
-                            <h3 className="font-bold text-lg mb-2 text-center">Pré-visualização do PDF</h3>
-                             <div className="flex justify-center gap-4 mb-4">
-                                <a href={pdfPreviewUrl} download="paper.pdf" className="btn btn-success">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                                    Download PDF
-                                </a>
-                                <button onClick={sendToOverleaf} className="btn bg-green-600 text-white">
-                                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zm-.016 21.84c-5.42 0-9.824-4.403-9.824-9.824S6.564 2.192 11.984 2.192c5.42 0 9.824 4.403 9.824 9.824s-4.404 9.824-9.824 9.824zM12 6.88l-3.696 6.4h7.392L12 6.88z"/></svg>
-                                    Send to Overleaf
-                                </button>
-                             </div>
-                            <div className="aspect-w-16 aspect-h-9 border rounded-lg overflow-hidden bg-gray-200">
-                                 <iframe src={pdfPreviewUrl} title="PDF Preview" className="w-full h-[70vh]"></iframe>
-                            </div>
-                        </div>
-                    )}
+                     {compilationStatus && <div className="mt-4 text-center p-3 rounded-md bg-gray-100">{compilationStatus}</div>}
                  </Section>
+                 {pdfPreviewUrl && (
+                     <Section title="Pré-visualização do PDF" stepNumber={2}>
+                         <iframe src={pdfPreviewUrl} className="w-full h-[600px] border rounded-lg" title="PDF Preview"></iframe>
+                     </Section>
+                 )}
             </div>
             
             {/* Step 3: Publish */}
@@ -970,71 +949,80 @@ const App: React.FC = () => {
                         ref={uploaderRef}
                         title={extractedMetadata.title}
                         abstractText={extractedMetadata.abstract}
+                        authors={extractedMetadata.authors as ZenodoUploaderRef['props']['authors']}
                         keywords={extractedMetadata.keywords}
-                        authors={extractedMetadata.authors}
                         compiledPdfFile={compiledPdfFile}
                         zenodoToken={zenodoToken}
-                        onFileSelect={() => {}}
-                        onPublishStart={() => { setIsUploading(true); setUploadStatus("Iniciando publicação..."); }}
+                        onFileSelect={() => {}} // Managed in App state
+                        onPublishStart={() => {
+                            setIsUploading(true);
+                            setUploadStatus(<span>Iniciando publicação...</span>);
+                        }}
                         onPublishSuccess={(result) => {
-                            setUploadStatus(<span className="text-green-600">✅ Publicado com sucesso! DOI: <a href={result.zenodoLink} target="_blank" rel="noreferrer" className="underline">{result.doi}</a></span>);
                             setIsUploading(false);
-                             // Update the log entry from 'unpublished' to 'published'
-                            if (editingArticleId) {
-                                setArticlesLog(prev => prev.map(entry => 
-                                    entry.id === editingArticleId
-                                    ? { ...entry, status: 'published', doi: result.doi, link: result.zenodoLink, id: result.doi }
-                                    : entry
-                                ));
-                            }
+                            setUploadStatus(<span className="text-green-600">Publicado com sucesso! DOI: {result.doi}</span>);
+                            const newLogEntry: ArticleLogEntry = {
+                                id: result.doi,
+                                status: 'published',
+                                title: extractedMetadata.title,
+                                date: new Date().toISOString(),
+                                doi: result.doi,
+                                link: result.zenodoLink,
+                            };
+                            setArticlesLog(prev => [newLogEntry, ...prev.filter(entry => entry.id !== republishingId)]);
+                            setRepublishingId(null);
                         }}
                         onPublishError={(message) => {
-                            setUploadStatus(<span className="text-red-600">❌ Falha na Publicação: {message}</span>);
-                            setIsUploading(false);
+                             setIsUploading(false);
+                             setUploadStatus(<span className="text-red-600">Falha na publicação: {message}</span>);
                         }}
                         extractedMetadata={extractedMetadata}
-                    />
-                    <div className="text-center mt-6">
-                         <button onClick={handlePublish} disabled={isUploading || !compiledPdfFile} className="btn-primary">
-                             {isUploading && <span className="spinner"></span>}
-                             {isUploading ? 'Publicando...' : 'Iniciar Publicação'}
-                         </button>
-                    </div>
-                    {uploadStatus && <div className="text-center mt-4 font-semibold">{uploadStatus}</div>}
+                     />
+                     <div className="mt-6 text-center">
+                         <ActionButton
+                            onClick={handlePublish}
+                            disabled={isUploading || !compiledPdfFile}
+                            isLoading={isUploading}
+                            text="Publicar Artigo"
+                            loadingText="Publicando..."
+                         />
+                     </div>
+                     {uploadStatus && <div className="mt-4 text-center p-3 rounded-md bg-gray-100">{uploadStatus}</div>}
                  </Section>
             </div>
             
-             {/* Step 4: History */}
+            {/* Step 4: History */}
             <div className={`${step !== 4 ? 'hidden' : ''}`}>
-                 <Section title="Histórico de Artigos" stepNumber={1} contentClassName="">
-                    <div className="mb-4 flex gap-2">
-                        <input type="text" placeholder="Dia" value={filter.day} onChange={e => setFilter({...filter, day: e.target.value})} className="w-20 p-2 border rounded" />
-                        <input type="text" placeholder="Mês" value={filter.month} onChange={e => setFilter({...filter, month: e.target.value})} className="w-20 p-2 border rounded" />
-                        <input type="text" placeholder="Ano" value={filter.year} onChange={e => setFilter({...filter, year: e.target.value})} className="w-24 p-2 border rounded" />
+                 <Section title="Histórico de Artigos" stepNumber={1}>
+                    <div className="my-6 p-4 border rounded-lg bg-indigo-50">
+                        <h3 className="text-lg font-semibold">Automação Diária</h3>
+                        <p className="text-sm text-gray-600">Gera e publica automaticamente 7 artigos às 3:00 da manhã.</p>
+                        <button onClick={handleSchedulerToggle} className={`mt-2 px-4 py-2 rounded ${isSchedulerActive ? 'bg-red-500' : 'bg-green-500'} text-white`}>
+                            {isSchedulerActive ? 'Desativar Agendador' : 'Ativar Agendador'}
+                        </button>
                     </div>
-                     <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+
+                    <div className="space-y-4">
                         {filteredArticles.map(article => (
-                            <div key={article.id} className={`p-4 rounded-lg border-l-4 ${
-                                article.status === 'published' ? 'bg-green-50 border-green-500' :
-                                article.status === 'unpublished' ? 'bg-yellow-50 border-yellow-500' :
-                                'bg-red-50 border-red-500'
-                            }`}>
-                                <p className="font-bold">{article.title}</p>
-                                <p className="text-sm text-gray-600">Data: {new Date(article.date).toLocaleString()}</p>
-                                {article.status === 'published' && article.doi && (
-                                     <a href={article.link} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline">DOI: {article.doi}</a>
-                                )}
-                                 {article.status !== 'published' && (
-                                    <button onClick={() => handleEditArticle(article)} className="text-sm text-indigo-600 hover:underline mt-1">
-                                        {article.status === 'compilation-failed' ? 'Tentar Corrigir e Compilar' : 'Continuar Edição e Publicação'}
-                                    </button>
-                                )}
+                            <div key={article.id} className="p-4 border rounded-lg flex justify-between items-center bg-white shadow-sm">
+                                <div>
+                                    <h4 className="font-bold text-gray-800">{article.title}</h4>
+                                    <p className="text-sm text-gray-500">Data: {new Date(article.date).toLocaleString()}</p>
+                                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${article.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{article.status}</span>
+                                    {article.doi && <a href={article.link} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline ml-2 text-sm">DOI: {article.doi}</a>}
+                                </div>
+                                <div className="flex gap-2">
+                                    { (article.status === 'unpublished' || article.status === 'compilation-failed') && article.latexCode && (
+                                        <button onClick={() => handleEditArticle(article)} className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm">
+                                            Editar & Compilar
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         ))}
-                     </div>
+                    </div>
                  </Section>
             </div>
-
         </div>
     );
 };

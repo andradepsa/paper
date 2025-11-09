@@ -206,12 +206,13 @@ export async function generateInitialPaper(title: string, language: Language, pa
         -   **Official university repositories and preprint servers** (e.g., arXiv.org, university .edu domains).
         -   **Recognized academic databases** (e.g., Google Scholar, JSTOR, PubMed).
         -   You MUST **AVOID** citing general websites, blogs, news articles, encyclopedias (like Wikipedia), or any non-academic sources. The references must be credible and suitable for a formal scientific paper.
-    4.  **Populate the Template:** You MUST replace all placeholder text within the selected template (e.g., \`[CONTEÚDO DA INTRODUÇÃO AQUI]\`, \`[ITEM DA BIBLIOGRAFIA 1]\`, \`[TÍTULO DO ARTIGO AQUI]\`) with the content you have generated. Ensure the final document is coherent and flows naturally.
-    5.  **Meet Page Count:** The generated content must be substantial enough to ensure the final rendered PDF is **at least ${pageCount} pages** long.
-    6.  **Strict Output Format:** The ENTIRE output MUST be ONLY the completed LaTeX code. Do not add any explanation, markdown formatting (like \`\`\`latex\`), or any text before \`\\documentclass\` or after \`\\end{document}\`.
+    4.  **Bibliography Formatting (MANDATORY):** When creating the bibliography entries in the "REFERÊNCIAS" section, you MUST format them according to a standard academic style (like ABNT NBR 6023). Crucially, you **MUST NOT, under any circumstances, include any URLs, hyperlinks, DOIs, 'Available at', or any other form of web link in the reference entries.** The references should ONLY contain traditional citation information (authors, title, journal/book title, year, volume, pages, etc.). For example, a correct entry is: "AUTHOR, A. A. Title of work. *Title of Periodical*, city, v. 5, n. 2, p. 123-145, 2023." An incorrect entry would include a DOI or a "Available at: <http://...>" link. This is a strict, non-negotiable formatting requirement.
+    5.  **Populate the Template:** You MUST replace all placeholder text within the selected template (e.g., \`[CONTEÚDO DA INTRODUÇÃO AQUI]\`, \`[ITEM DA BIBLIOGRAFIA 1]\`, \`[TÍTULO DO ARTIGO AQUI]\`) with the content you have generated. Ensure the final document is coherent and flows naturally.
+    6.  **Meet Page Count:** The generated content must be substantial enough to ensure the final rendered PDF is **at least ${pageCount} pages** long.
+    7.  **Strict Output Format:** The ENTIRE output MUST be ONLY the completed LaTeX code. Do not add any explanation, markdown formatting (like \`\`\`latex\`), or any text before \`\\documentclass\` or after \`\\end{document}\`.
 
     **Proactive Overflow Prevention Rules (CRITICAL for compilation success):**
-    -   **URL Handling:** ALWAYS wrap any URL or long file path in a \`\\url{...}\` command. The required \`url\` and \`hyperref\` packages are already included in the template. This is mandatory.
+    -   **URL Handling:** In the main body of the paper (outside the bibliography), if a URL is absolutely necessary (like the ORCID link), it MUST be wrapped in a \`\\url{...}\` command. However, to reiterate, the **"REFERÊNCIAS" section must be completely free of URLs.**
     -   **Long Words:** Avoid using extremely long, unbreakable words or identifiers. If a long word is necessary, either rephrase the sentence to place it differently or insert manual hyphenation hints (\`\\-\`) to guide line breaking (e.g., \`super\\-cali\\-fragilistic\`).
     -   **Spacing and Justification:** Write natural-flowing paragraphs. Do not try to manually force line breaks with \`\\\\\` inside a paragraph. Trust LaTeX's justification engine, but help it by following the other rules.
 
@@ -343,13 +344,16 @@ export async function improvePaper(paperContent: string, analysis: AnalysisResul
     -   Apply the necessary changes directly to the LaTeX source code to address each improvement point.
     -   The entire output MUST be a single, valid, and complete LaTeX document. Do not include any explanatory text, markdown formatting, or code fences (like \`\`\`latex) before \`\\documentclass\` or after \`\\end{document}\`.
     -   The language of the entire paper must remain in **${languageName}**.
-    -   **CRITICAL: The reference section MUST remain unnumbered (\`\\section*{REFERÊNCIAS}\`) and formatted according to ABNT NBR 6023. Do NOT use \`\\begin{thebibliography}\`, \`\\end{thebibliography}\`, \`\\bibitem\`, or \`\\cite{}\` commands.**
+    -   **CRITICAL REFERENCE FORMATTING:**
+        -   The reference section MUST remain unnumbered (\`\\section*{REFERÊNCIAS}\`).
+        -   The formatting must follow ABNT NBR 6023. Do NOT use \`\\begin{thebibliography}\`, \`\\end{thebibliography}\`, \`\\bibitem\`, or \`\\cite{}\` commands.
+        -   **MANDATORY: You MUST NOT add or include any URLs, DOIs, or hyperlinks in the reference entries.** The final reference list must be completely free of web links.
     -   **Do NOT add or remove \`\\newpage\` commands. Let the LaTeX engine handle page breaks automatically.**
     -   **Crucially, do NOT include any images, figures, or complex tables.**
     -   Focus on improving aspects directly related to the provided feedback.
     
     **Proactive Overflow Prevention Rules (CRITICAL for compilation success):**
-    -   **URL Handling:** ALWAYS wrap any URL or long file path in a \`\\url{...}\` command. The required \`url\` and \`hyperref\` packages are already included. This is mandatory.
+    -   **URL Handling:** In the main body of the paper (outside the bibliography), if a URL is absolutely necessary (like the ORCID link), it MUST be wrapped in a \`\\url{...}\` command. However, to reiterate, the **"REFERÊNCIAS" section must be completely free of URLs.**
     -   **Long Words:** Avoid using extremely long, unbreakable words or identifiers. If a long word is necessary, either rephrase the sentence to place it differently or insert manual hyphenation hints (\`\\-\`) to guide line breaking.
     -   **Spacing and Justification:** Write natural-flowing paragraphs. Do not try to manually force line breaks with \`\\\\\` inside a paragraph.
 
@@ -418,7 +422,10 @@ export async function fixLatexPaper(paperContent: string, fixesToApply: { key: s
     -   You MUST apply the following specific fixes to the document:
         -   ${fixInstructions}
     -   The entire output MUST be a single, valid, and complete LaTeX document. Do not include any explanatory text, markdown formatting, or code fences.
-    -   **CRITICAL: The reference section MUST remain unnumbered (\`\\section*{REFERÊNCIAS}\`) and formatted according to ABNT NBR 6023. Do NOT use \`\\begin{thebibliography}\`, \`\\end{thebibliography}\`, \`\\bibitem\`, or \`\\cite{}\` commands.**
+    -   **CRITICAL REFERENCE FORMATTING:**
+        -   The reference section MUST remain unnumbered (\`\\section*{REFERÊNCIAS}\`).
+        -   The formatting must follow ABNT NBR 6023. Do NOT use \`\\begin{thebibliography}\`, \`\\end{thebibliography}\`, \`\\bibitem\`, or \`\\cite{}\` commands.
+        -   **MANDATORY: You MUST ensure the reference entries do NOT contain any URLs, DOIs, or hyperlinks.** If you find any, you must remove them.
     -   **Do NOT add or remove \`\\newpage\` commands.**
     -   **Do NOT include any images, figures, or complex tables.**
     -   Return only the corrected LaTeX source code.
@@ -455,8 +462,9 @@ export async function reformatPaperWithStyleGuide(paperContent: string, styleGui
     2.  Your task is to reformat **ONLY** the content within the \`\\section*{REFERÊNCIAS}\` section.
     3.  You **MUST NOT** change any other part of the document. The preamble, abstract, body text, conclusion, etc., must remain absolutely identical to the original.
     4.  The new reference list must strictly adhere to the **${styleGuideInfo.name} (${styleGuideInfo.description})** formatting rules.
-    5.  The number of references in the output must be the same as in the input.
-    6.  The final output must be the **COMPLETE, FULL** LaTeX document, with only the reference section's content modified. Do not provide only the reference section or include any explanatory text or markdown formatting.
+    5.  **OVERRIDING RULE (MANDATORY): Regardless of the style guide's standard practice, you MUST NOT include any URLs, DOIs, hyperlinks, or 'Available at' text in the final reference entries.** Your final output for the references must be completely free of any web links.
+    6.  The number of references in the output must be the same as in the input.
+    7.  The final output must be the **COMPLETE, FULL** LaTeX document, with only the reference section's content modified. Do not provide only the reference section or include any explanatory text or markdown formatting.
     `;
 
     const userPrompt = `Please reformat the references in the following LaTeX document to conform to the ${styleGuideInfo.name} style guide. Return the full, unchanged document with only the reference list updated.
@@ -507,7 +515,8 @@ export async function expandPaperContent(
     **Critical Preservation Rules (NON-NEGOTIABLE):**
     1.  **PRESERVE PREAMBLE & STRUCTURE:** The entire LaTeX preamble (from \`\\documentclass\` to before \`\\begin{document}\`) and the overall ABNT structure MUST be preserved.
     2.  **PRESERVE AUTHOR BLOCK:** The author block containing the name "SÉRGIO DE ANDRADE, PAULO" and the ORCID MUST NOT be altered or removed.
-    3.  **STRICT OUTPUT FORMAT:** The ENTIRE output MUST be ONLY the completed, expanded LaTeX code. Do not add any explanation or markdown formatting.
+    3.  **PRESERVE REFERENCE FORMAT: The "REFERÊNCIAS" section, including its existing entries, must be preserved. If you add new references, they must follow the same format and MUST NOT contain any URLs, DOIs, or hyperlinks.**
+    4.  **STRICT OUTPUT FORMAT:** The ENTIRE output MUST be ONLY the completed, expanded LaTeX code. Do not add any explanation or markdown formatting.
 
     Your goal is not to "fix" or "improve" the paper's quality in other areas—that is already done. Your one and only goal is to make it longer by adding valuable, high-quality academic content.`;
 
@@ -545,7 +554,7 @@ export async function ensureAbntFormatting(paperContent: string, model: string):
     -   **Spacing:** Ensure \`\\onehalfspacing\` is correctly applied.
     -   **Section Titles:** Verify titles follow ABNT numbering and capitalization (e.g., \`\\section{1 INTRODUÇÃO}\`).
     -   **Core Sections:** Check that the abstract (\`RESUMO\`) and reference (\`REFERÊNCIAS\`) sections are correctly formatted (e.g., unnumbered with \`\\section*\`).
-    -   **Bibliography:** Review the entries in the reference section for consistent formatting that aligns with ABNT NBR 6023 standards.
+    -   **Bibliography:** Review the entries in the reference section for consistent formatting that aligns with ABNT NBR 6023 standards. **Crucially, you MUST verify and ensure that NO reference entries contain any URLs, DOIs, or hyperlinks.** Remove them if they exist.
     -   **General Typography:** Correct any minor typographical inconsistencies that violate ABNT (e.g., incorrect use of italics or bolding).
 
     **Output Format:**

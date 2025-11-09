@@ -93,9 +93,7 @@ function formatExamplesForPrompt(examples: { successful: string[], failed: strin
  * It extracts the content from the AI's response and wraps it with the original, correct preamble.
  * This prevents the AI from modifying critical structural elements of the document.
  */
-function verifyAndRestoreStructure(generatedPaper: string): string {
-    const originalTemplate = LATEX_TEMPLATES[0];
-
+function verifyAndRestoreStructure(generatedPaper: string, originalTemplate: string): string {
     // 1. Define the immutable header (preamble) from the original template
     const preambleEndMarker = '\\begin{document}';
     const headerEndIndex = originalTemplate.indexOf(preambleEndMarker);
@@ -238,14 +236,17 @@ export async function generateInitialPaper(title: string, language: Language, pa
     else if (pageCount === 60) referenceCount = 60;
     else if (pageCount === 100) referenceCount = 100;
 
-    const templatesString = LATEX_TEMPLATES[0]; // Use the single template
+    // Programmatically insert the title to guarantee it's correct.
+    // FIX: Replaced `replaceAll` with the compatible `split().join()` method to support older TypeScript/JavaScript environments.
+    const initialTemplate = LATEX_TEMPLATES[0].split('[TÍTULO DO ARTIGO AQUI]').join(title);
 
     const systemInstruction = `You are a world-class AI assistant specialized in generating high-quality scientific articles by populating a pre-defined LaTeX template. Your task is to follow a set of strict instructions to produce a complete, compilable, and substantial academic paper.
 
     **PRIMARY DIRECTIVES (NON-NEGOTIABLE):**
     1.  **PAGE COUNT IS CRITICAL:** Your absolute top priority is to generate enough high-quality, dense content to ensure the final rendered PDF is **AT LEAST ${pageCount} pages** long. This is the most important success criterion.
     2.  **STRICT TEMPLATE ADHERENCE:** You MUST use the provided LaTeX template as the rigid, unchangeable structure for the paper. You MUST NOT alter the template's structure, packages, or section commands. Your only job is to replace the placeholder text.
-    3.  **COMPLETE PLACEHOLDER REPLACEMENT:** You MUST find and replace EVERY placeholder in the template (e.g., \`[CONTEÚDO DA INTRODUÇÃO AQUI]\`, \`[TÍTULO DO ARTIGO AQUI]\`, \`[ITEM DA BIBLIOGRAFIA 1]\`) with the content you generate. No placeholders should remain in the final output.
+    3.  **PRESERVE AUTHOR BLOCK:** The block of code containing the author's name and ORCID (\`\\begin{flushright} SÉRGIO DE ANDRADE, PAULO ... \\end{flushright}\`) is sacred. You **MUST NOT** delete or modify this block under any circumstances.
+    4.  **COMPLETE PLACEHOLDER REPLACEMENT:** You MUST find and replace EVERY remaining placeholder in the template (e.g., \`[CONTEÚDO DA INTRODUÇÃO AQUI]\`, \`[ITEM DA BIBLIOGRAFIA 1]\`) with the content you generate. No placeholders should remain in the final output.
 
     **Content Density and Structure Guidelines (Follow these to meet the page count):**
     -   **Target Word Count:** To achieve ${pageCount} pages in ABNT format (Times 12, 1.5 spacing), you must generate between **${pageCount * 350} and ${pageCount * 500} words** of main body content. Aim for the higher end of this range.
@@ -265,16 +266,16 @@ export async function generateInitialPaper(title: string, language: Language, pa
     -   **Avoid Long Words:** If an extremely long, unbreakable word is necessary, insert hyphenation hints (\`\\-\`).
 
     **Provided LaTeX Template:**
-    ${templatesString}
+    ${initialTemplate}
     `;
 
-    const userPrompt = `Generate a scientific paper in ${languageName} with the title: "${title}". Use the provided template, fill it completely with high-quality, extensive content, and ensure the final paper is at least ${pageCount} pages long by following all density and structure guidelines.`;
+    const userPrompt = `Generate a scientific paper in ${languageName}. Use the provided template, fill it completely with high-quality, extensive content, and ensure the final paper is at least ${pageCount} pages long by following all density and structure guidelines. The title is already embedded in the template.`;
 
     const response = await callModel(model, systemInstruction, userPrompt, { googleSearch: true });
     
     let paper = response.text.trim().replace(/^```latex\s*|```\s*$/g, '');
     
-    paper = verifyAndRestoreStructure(paper);
+    paper = verifyAndRestoreStructure(paper, initialTemplate);
     
     const sources: PaperSource[] = response.candidates?.[0]?.groundingMetadata?.groundingChunks
         ?.filter(chunk => chunk.web)
@@ -348,7 +349,8 @@ export async function analyzePaper(paperContent: string, pageCount: number, mode
 
 export async function improvePaper(paperContent: string, analysis: AnalysisResult, language: Language, model: string): Promise<string> {
     const languageName = LANGUAGES.find(l => l.code === language)?.name || 'English';
-    const pageCount = (analysis.analysis.find(a => a.topicName === 'PAGE COUNT COMPLIANCE')?.improvement.match(/\d+/) || [12])[0];
+    const pageCountMatch = analysis.analysis.find(a => a.topicName === 'PAGE COUNT COMPLIANCE')?.improvement.match(/\d+/);
+    const pageCount = pageCountMatch ? pageCountMatch[0] : '12';
     
     const criticalPoints = analysis.analysis
         .filter(item => item.score < 7.0)
@@ -380,6 +382,7 @@ export async function improvePaper(paperContent: string, analysis: AnalysisResul
     **Critical Preservation Rules (NON-NEGOTIABLE):**
     1.  **DO NOT SHORTEN THE PAPER:** Your absolute top priority is to apply the suggested improvements *without reducing the overall length of the paper*. If a suggestion implies making the text more concise, you MUST compensate by expanding on other areas to ensure the total word/page count does not decrease. If the 'PAGE COUNT COMPLIANCE' score is low, you must actively and significantly expand the paper's content. This rule overrides all other suggestions if they conflict.
     2.  **PRESERVE STRUCTURE:** You are prohibited from altering the document's preamble (from \\documentclass to \\begin{document}) and its final command (\\end{document}). Your changes must only be within the document's body.
+    3.  **PRESERVE AUTHOR BLOCK:** The block of code containing the author's name and ORCID (\`\\begin{flushright} SÉRGIO DE ANDRADE, PAULO ... \\end{flushright}\`) is sacred. You **MUST NOT** delete or modify this block under any circumstances.
 
     **Improvement Strategy (VERY IMPORTANT):**
     1.  **Focus Exclusively on Critical Fixes:** The user will provide a list of "CRITICAL IMPROVEMENTS". Your ONLY task is to address these specific issues thoroughly. Do not address any other perceived flaws.
@@ -403,7 +406,7 @@ export async function improvePaper(paperContent: string, analysis: AnalysisResul
     const response = await callModel(model, systemInstruction, userPrompt);
     let paper = response.text.trim().replace(/^```latex\s*|```\s*$/g, '');
     
-    paper = verifyAndRestoreStructure(paper);
+    paper = verifyAndRestoreStructure(paper, paperContent); // Use original content as template reference
 
     return paper;
 }
@@ -423,8 +426,9 @@ export async function fixLatexPaper(paperContent: string, fixesToApply: { key: s
 
     ${priorityInstruction}
 
-    **Critical Preservation Rules:**
+    **Critical Preservation Rules (NON-NEGOTIABLE):**
     1.  **PRESERVE STRUCTURE:** You must not alter the document's preamble (from \\documentclass to \\begin{document}) or its final command (\\end{document}). Your changes must only be within the document's body.
+    2.  **PRESERVE AUTHOR BLOCK:** The block of code containing the author's name and ORCID (\`\\begin{flushright} SÉRGIO DE ANDRADE, PAULO ... \\end{flushright}\`) is sacred. You **MUST NOT** delete or modify this block under any circumstances.
 
     **Instructions for Fixing:**
     -   You will receive the full LaTeX source code of a paper.
@@ -443,7 +447,7 @@ export async function fixLatexPaper(paperContent: string, fixesToApply: { key: s
     const response = await callModel(model, systemInstruction, userPrompt);
     let paper = response.text.trim().replace(/^```latex\s*|```\s*$/g, '');
     
-    paper = verifyAndRestoreStructure(paper);
+    paper = verifyAndRestoreStructure(paper, paperContent);
 
     return paper;
 }
@@ -456,10 +460,10 @@ export async function reformatPaperWithStyleGuide(paperContent: string, styleGui
 
     const systemInstruction = `You are an expert academic editor specializing in citation and reference formatting. Your task is to reformat the bibliography of a scientific paper according to a specific style guide.
 
-    **CRITICAL INSTRUCTIONS:**
+    **CRITICAL INSTRUCTIONS (NON-NEGOTIABLE):**
     1.  You will receive the full LaTeX source code of a paper.
     2.  Your task is to reformat **ONLY** the content within the \`\\section*{REFERÊNCIAS}\` section.
-    3.  You **MUST NOT** change any other part of the document. The preamble, abstract, body text, conclusion, etc., must remain absolutely identical to the original.
+    3.  You **MUST NOT** change any other part of the document. The preamble, title, author block, abstract, body text, conclusion, etc., must remain absolutely identical to the original.
     4.  The new reference list must strictly adhere to the **${styleGuideInfo.name} (${styleGuideInfo.description})** formatting rules.
     5.  The final output must be the **COMPLETE, FULL** LaTeX document, with only the reference section's content modified. Do not provide only the reference section or include any explanatory text or markdown formatting.
     `;
@@ -475,7 +479,7 @@ export async function reformatPaperWithStyleGuide(paperContent: string, styleGui
     const response = await callModel(model, systemInstruction, userPrompt);
     let paper = response.text.trim().replace(/^```latex\s*|```s*$/g, '');
 
-    paper = verifyAndRestoreStructure(paper);
+    paper = verifyAndRestoreStructure(paper, paperContent);
 
     return paper;
 }

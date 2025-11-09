@@ -200,10 +200,15 @@ export async function generateInitialPaper(title: string, language: Language, pa
 
     **Your Task:**
     1.  **Select a Template:** You are provided with 10 high-quality, pre-approved LaTeX templates that are guaranteed to be compliant with ABNT standards for scientific articles (A4 format). You MUST choose ONE of these templates to serve as the structure for the paper.
-    2.  **Generate Content:** Based on the user-provided title, generate a complete, comprehensive, and high-quality scientific paper. This includes a detailed abstract (resumo), keywords (palavras-chave), an introduction, multiple sections with subsections for the main body, a conclusion, and a bibliography. You must use the Google Search tool to find relevant academic sources to create a credible bibliography with **exactly ${referenceCount} entries**.
-    3.  **Populate the Template:** You MUST replace all placeholder text within the selected template (e.g., \`[CONTEÚDO DA INTRODUÇÃO AQUI]\`, \`[ITEM DA BIBLIOGRAFIA 1]\`, \`[TÍTULO DO ARTIGO AQUI]\`) with the content you have generated. Ensure the final document is coherent and flows naturally.
-    4.  **Meet Page Count:** The generated content must be substantial enough to ensure the final rendered PDF is **at least ${pageCount} pages** long.
-    5.  **Strict Output Format:** The ENTIRE output MUST be ONLY the completed LaTeX code. Do not add any explanation, markdown formatting (like \`\`\`latex\`), or any text before \`\\documentclass\` or after \`\\end{document}\`.
+    2.  **Generate Content & Bibliography:** Based on the user-provided title, generate a complete, comprehensive, and high-quality scientific paper. This includes all sections from abstract to conclusion. For the bibliography, you MUST use the Google Search tool to find **excellent academic sources** to create a credible bibliography with **exactly ${referenceCount} entries**.
+    3.  **Source Quality Mandate (CRITICAL):** The quality of the references is paramount. You MUST prioritize sources that are:
+        -   **Peer-reviewed academic journals** (e.g., from publishers like Elsevier, Springer, IEEE, Nature, Science).
+        -   **Official university repositories and preprint servers** (e.g., arXiv.org, university .edu domains).
+        -   **Recognized academic databases** (e.g., Google Scholar, JSTOR, PubMed).
+        -   You MUST **AVOID** citing general websites, blogs, news articles, encyclopedias (like Wikipedia), or any non-academic sources. The references must be credible and suitable for a formal scientific paper.
+    4.  **Populate the Template:** You MUST replace all placeholder text within the selected template (e.g., \`[CONTEÚDO DA INTRODUÇÃO AQUI]\`, \`[ITEM DA BIBLIOGRAFIA 1]\`, \`[TÍTULO DO ARTIGO AQUI]\`) with the content you have generated. Ensure the final document is coherent and flows naturally.
+    5.  **Meet Page Count:** The generated content must be substantial enough to ensure the final rendered PDF is **at least ${pageCount} pages** long.
+    6.  **Strict Output Format:** The ENTIRE output MUST be ONLY the completed LaTeX code. Do not add any explanation, markdown formatting (like \`\`\`latex\`), or any text before \`\\documentclass\` or after \`\\end{document}\`.
 
     **Proactive Overflow Prevention Rules (CRITICAL for compilation success):**
     -   **URL Handling:** ALWAYS wrap any URL or long file path in a \`\\url{...}\` command. The required \`url\` and \`hyperref\` packages are already included in the template. This is mandatory.

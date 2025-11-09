@@ -796,6 +796,33 @@ const App: React.FC = () => {
         }
     };
 
+    const handleSendToOverleaf = () => {
+        if (!latexCode.trim()) {
+            alert("Não há código LaTeX para enviar para o Overleaf.");
+            return;
+        }
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'https://www.overleaf.com/docs';
+        form.target = '_blank';
+
+        const snipTextarea = document.createElement('textarea');
+        snipTextarea.name = 'snip';
+        snipTextarea.value = latexCode;
+        form.appendChild(snipTextarea);
+
+        const nameInput = document.createElement('input');
+        nameInput.type = 'hidden';
+        nameInput.name = 'snip_name';
+        nameInput.value = 'main.tex';
+        form.appendChild(nameInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+    };
+
      const handleToggleScheduler = () => {
         setIsSchedulerActive(prev => {
             const newState = !prev;
@@ -1005,9 +1032,13 @@ const App: React.FC = () => {
                                 {pdfPreviewUrl ? (
                                     <div className="p-2 border border-gray-300 rounded-lg shadow-inner bg-gray-100">
                                         <iframe src={pdfPreviewUrl} title="PDF Preview" className="w-full h-96 border-none" />
-                                         <div className="mt-4 text-center">
+                                         <div className="mt-4 text-center flex flex-wrap justify-center gap-4">
                                             <button onClick={handleDownloadPdf} className="px-6 py-2 bg-gray-700 text-white font-semibold rounded-full hover:bg-gray-800 transition-colors">
                                                 Download PDF
+                                            </button>
+                                            <button onClick={handleSendToOverleaf} className="px-6 py-2 bg-green-600 text-white font-semibold rounded-full hover:bg-green-700 transition-colors flex items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-3.5-9.21l3.5 3.5 3.5-3.5v-2.79l-3.5 3.5-3.5-3.5v2.79z"/></svg>
+                                                Send to Overleaf
                                             </button>
                                         </div>
                                     </div>

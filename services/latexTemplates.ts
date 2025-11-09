@@ -63,7 +63,7 @@ export const LATEX_TEMPLATES: string[] = [
 [CONTEÚDO DA CONCLUSÃO AQUI. RECAPITULE OS PONTOS PRINCIPAIS DO ARTIGO, REAFIRME A CONTRIBUIÇÃO DO TRABALHO E SUGIRA PESQUISAS FUTURAS.]
 
 \\section*{REFERÊNCIAS}
-\\justifying
+\\begin{justify}
 [ITEM DA BIBLIOGRAFIA 1]
 
 [ITEM DA BIBLIOGRAFIA 2]
@@ -103,6 +103,7 @@ export const LATEX_TEMPLATES: string[] = [
 [ITEM DA BIBLIOGRAFIA 19]
 
 [ITEM DA BIBLIOGRAFIA 20]
+\\end{justify}
 
 \\end{document}`,
 
@@ -171,7 +172,7 @@ export const LATEX_TEMPLATES: string[] = [
 [SINTETIZE AS PRINCIPAIS DESCOBERTAS DO ESTUDO, RETOMANDO OS OBJETIVOS PROPOSTOS NA INTRODUÇÃO. DISCUTA AS LIMITAÇÕES DA PESQUISA E APONTE CAMINHOS PARA TRABALHOS FUTUROS.]
 
 \\section*{REFERÊNCIAS}
-\\justifying
+\\begin{justify}
 [ITEM DA BIBLIOGRAFIA 1]
 
 [ITEM DA BIBLIOGRAFIA 2]
@@ -211,6 +212,7 @@ export const LATEX_TEMPLATES: string[] = [
 [ITEM DA BIBLIOGRAFIA 19]
 
 [ITEM DA BIBLIOGRAFIA 20]
+\\end{justify}
 
 \\end{document}`,
 
@@ -279,7 +281,7 @@ export const LATEX_TEMPLATES: string[] = [
 [CONCLUSÃO DO TRABALHO. Retome a questão de pesquisa, sumarize as conclusões, aponte as limitações e sugira trabalhos futuros.]
 
 \\section*{REFERÊNCIAS}
-\\justifying
+\\begin{justify}
 [ITEM DA BIBLIOGRAFIA 1]
 
 [ITEM DA BIBLIOGRAFIA 2]
@@ -319,6 +321,7 @@ export const LATEX_TEMPLATES: string[] = [
 [ITEM DA BIBLIOGRAFIA 19]
 
 [ITEM DA BIBLIOGRAFIA 20]
+\\end{justify}
 
 \\end{document}`,
 
@@ -400,7 +403,7 @@ export const LATEX_TEMPLATES: string[] = [
 [SÍNTESE FINAL DO TRABALHO. Retome os principais pontos, reafirme a contribuição, indique limitações e sugestões para o futuro.]
 
 \\section*{REFERÊNCIAS}
-\\justifying
+\\begin{justify}
 [ITEM DA BIBLIOGRAFIA 1]
 
 [ITEM DA BIBLIOGRAFIA 2]
@@ -440,6 +443,7 @@ export const LATEX_TEMPLATES: string[] = [
 [ITEM DA BIBLIOGRAFIA 19]
 
 [ITEM DA BIBLIOGRAFIA 20]
+\\end{justify}
 
 \\end{document}`,
 
@@ -504,7 +508,7 @@ export const LATEX_TEMPLATES: string[] = [
 [CONCLUSÃO. Sumarize as lições aprendidas com o estudo de caso, discuta a generalização dos achados e forneça recomendações práticas ou teóricas.]
 
 \\section*{REFERÊNCIAS}
-\\justifying
+\\begin{justify}
 [ITEM DA BIBLIOGRAFIA 1]
 
 [ITEM DA BIBLIOGRAFIA 2]
@@ -544,6 +548,7 @@ export const LATEX_TEMPLATES: string[] = [
 [ITEM DA BIBLIOGRAFIA 19]
 
 [ITEM DA BIBLIOGRAFIA 20]
+\\end{justify}
 
 \\end{document}`,
 
@@ -564,7 +569,7 @@ export const LATEX_TEMPLATES: string[] = [
   pdfsubject={[RESUMO COMPLETO DO ARTIGO, EM UM ÚNICO PARÁGRAFO, VAI AQUI]},
   pdfkeywords={[PALAVRA-CHAVE 1], [PALAVRA-CHAVE 2], [PALAVRA-CHAVE 3], [PALAVRA-CHAVE 4]}
 }
-\\title={[TÍTULO DO ARTIGO AQUI]}
+\\title{[TÍTULO DO ARTIGO AQUI]}
 
 \\begin{document}
 \\onehalfspacing
@@ -611,7 +616,7 @@ export const LATEX_TEMPLATES: string[] = [
 [CONCLUSÃO. Finalize o artigo com uma síntese forte, reconhecendo limitações e apontando para o futuro.]
 
 \\section*{REFERÊNCIAS}
-\\justifying
+\\begin{justify}
 [ITEM DA BIBLIOGRAFIA 1]
 
 [ITEM DA BIBLIOGRAFIA 2]
@@ -651,6 +656,7 @@ export const LATEX_TEMPLATES: string[] = [
 [ITEM DA BIBLIOGRAFIA 19]
 
 [ITEM DA BIBLIOGRAFIA 20]
+\\end{justify}
 
 \\end{document}`,
 
@@ -703,7 +709,7 @@ export const LATEX_TEMPLATES: string[] = [
 [Analise as contribuições mais atuais para o tema.]
 
 \\section{MÉTODO}
-[CONTEÚDO DA METODOLOGIA. Descrição clara e concisa do caminho percorrido na pesquisa.]
+[CONTEÚDO DA METODologia. Descrição clara e concisa do caminho percorrido na pesquisa.]
 
 \\section{ANÁLISE E DISCUSSÃO}
 [CONTEÚDO DE RESULTADOS E DISCUSSÃO. Apresente os resultados e imediatamente os discuta em relação à teoria. Esta seção deve ser a mais longa do artigo.]
@@ -712,7 +718,7 @@ export const LATEX_TEMPLATES: string[] = [
 [CONTEÚDO DA CONCLUSÃO. Síntese final, limitações e sugestões para pesquisas futuras.]
 
 \\section*{REFERÊNCIAS}
-\\justifying
+\\begin{justify}
 [ITEM DA BIBLIOGRAFIA 1]
 
 [ITEM DA BIBLIOGRAFIA 2]
@@ -752,6 +758,7 @@ export const LATEX_TEMPLATES: string[] = [
 [ITEM DA BIBLIOGRAFIA 19]
 
 [ITEM DA BIBLIOGRAFIA 20]
+\\end{justify}
 
 \\end{document}`,
 
@@ -816,7 +823,7 @@ export const LATEX_TEMPLATES: string[] = [
 [Proponha direções para futuras investigações, sugerindo novos problemas, métodos ou abordagens.]
 
 \\section*{REFERÊNCIAS}
-\\justifying
+\\begin{justify}
 [ITEM DA BIBLIOGRAFIA 1]
 
 [ITEM DA BIBLIOGRAFIA 2]
@@ -856,6 +863,7 @@ export const LATEX_TEMPLATES: string[] = [
 [ITEM DA BIBLIOGRAFIA 19]
 
 [ITEM DA BIBLIOGRAFIA 20]
+\\end{justify}
 
 \\end{document}`,
 
@@ -924,7 +932,7 @@ export const LATEX_TEMPLATES: string[] = [
 [CONCLUSÃO. Sumarize a contribuição do trabalho e aponte direções futuras.]
 
 \\section*{REFERÊNCIAS}
-\\justifying
+\\begin{justify}
 [ITEM DA BIBLIOGRAFIA 1]
 
 [ITEM DA BIBLIOGRAFIA 2]
@@ -964,6 +972,7 @@ export const LATEX_TEMPLATES: string[] = [
 [ITEM DA BIBLIOGRAFIA 19]
 
 [ITEM DA BIBLIOGRAFIA 20]
+\\end{justify}
 
 \\end{document}`,
 
@@ -1027,7 +1036,7 @@ export const LATEX_TEMPLATES: string[] = [
 [CONCLUSÃO. Recapitule a importância do novo conceito e sugira como ele pode ser testado ou desenvolvido no futuro.]
 
 \\section*{REFERÊNCIAS}
-\\justifying
+\\begin{justify}
 [ITEM DA BIBLIOGRAFIA 1]
 
 [ITEM DA BIBLIOGRAFIA 2]
@@ -1067,6 +1076,7 @@ export const LATEX_TEMPLATES: string[] = [
 [ITEM DA BIBLIOGRAFIA 19]
 
 [ITEM DA BIBLIOGRAFIA 20]
+\\end{justify}
 
 \\end{document}`
 ];

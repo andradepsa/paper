@@ -11,7 +11,7 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // FIX: The component was not correctly initialized. Added a constructor with `super(props)` to establish the `this` context, which resolves errors where `this.state`, `this.props`, and `this.setState` were not recognized.
+  // FIX: The component was not correctly initialized. Added a constructor with `super(props)` to establish the `this` context and initialize the state, which resolves errors where `this.state`, `this.props`, and `this.setState` were not recognized.
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {

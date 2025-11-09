@@ -523,3 +523,45 @@ export async function expandPaperContent(
 
     return paper;
 }
+
+export async function ensureAbntFormatting(paperContent: string, model: string): Promise<string> {
+    const systemInstruction = `You are a meticulous technical editor specializing in ABNT standards for scientific papers written in LaTeX.
+
+    **Your Single, Final Task:**
+    Review the provided LaTeX document and correct any deviations from the ABNT NBR standards. Your goal is to ensure the final document is perfectly formatted for a scientific publication, while respecting the existing content and structure.
+
+    **Critical Preservation Rules (NON-NEGOTIABLE):**
+    1.  **DO NOT CHANGE CONTENT:** You must not alter the scientific meaning, arguments, or substance of the paper. Your role is purely formatting.
+    2.  **PRESERVE PREAMBLE & METADATA:** The entire LaTeX preamble (from \`\\documentclass\` to before \`\\begin{document}\`) and the \`\\hypersetup\` block MUST remain absolutely untouched and identical to the original.
+    3.  **PRESERVE AUTHOR & TITLE BLOCK:** The author block, including the name 'SÉRGIO DE ANDRADE, PAULO' and the ORCID, as well as the title block, MUST NOT be altered.
+    4.  **PRESERVE STRUCTURE:** Do not add, remove, or reorder sections (\`\\section\`, \`\\subsection\`). The fundamental structure of the document must be preserved.
+
+    **Actionable Formatting Checklist (Focus on these):**
+    -   **Spacing:** Ensure \`\\onehalfspacing\` is correctly applied.
+    -   **Section Titles:** Verify titles follow ABNT numbering and capitalization (e.g., \`\\section{1 INTRODUÇÃO}\`).
+    -   **Core Sections:** Check that the abstract (\`RESUMO\`) and reference (\`REFERÊNCIAS\`) sections are correctly formatted (e.g., unnumbered with \`\\section*\`).
+    -   **Bibliography:** Review the entries in the reference section for consistent formatting that aligns with ABNT NBR 6023 standards.
+    -   **General Typography:** Correct any minor typographical inconsistencies that violate ABNT (e.g., incorrect use of italics or bolding).
+
+    **Output Format:**
+    Return ONLY the complete, corrected LaTeX code. Do not include any explanations, comments, or markdown formatting like \`\`\`latex.
+    `;
+
+    const userPrompt = `Please review and correct the following LaTeX document to ensure it fully complies with ABNT formatting standards. Adhere strictly to the preservation rules provided.
+
+    **LaTeX Document:**
+    \`\`\`latex
+    ${paperContent}
+    \`\`\`
+    `;
+
+    const response = await callModel(model, systemInstruction, userPrompt);
+    let paper = response.text.trim().replace(/^```latex\s*|```\s*$/g, '');
+
+    // Ensure the paper ends with \end{document}
+    if (!paper.includes('\\end{document}')) {
+        paper += '\n\\end{document}';
+    }
+
+    return paper;
+}

@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { generateInitialPaper, analyzePaper, improvePaper, generatePaperTitle, fixLatexPaper, reformatPaperWithStyleGuide, expandPaperContent, ensureAbntFormatting } from './services/geminiService';
 import type { Language, IterationAnalysis, PaperSource, AnalysisResult, StyleGuide } from './types';
@@ -792,6 +790,17 @@ const App: React.FC = () => {
             setIsReformatting(false);
         }
     };
+    
+    const getStatusStyle = () => {
+        if (generationStatus.startsWith('❌') || generationStatus.startsWith('⚠️')) {
+            return 'text-red-600';
+        }
+        if (generationStatus.startsWith('✅') || generationStatus.startsWith('🛑')) {
+            return 'text-green-600';
+        }
+        return 'text-indigo-700 animate-pulse';
+    };
+
 
     return (
         <div className="container mx-auto p-4 sm:p-6 lg:p-8 font-sans bg-gray-100 min-h-screen">
@@ -835,10 +844,19 @@ const App: React.FC = () => {
                                 <input id="num-articles" type="number" min="1" max="100" value={numberOfArticles} onChange={e => setNumberOfArticles(parseInt(e.target.value, 10) || 1)} className="p-2 border rounded-md shadow-sm w-28 text-center text-lg"/>
                             </div>
                             <div className="text-center pt-4">
-                                <ActionButton onClick={handleFullAutomation} disabled={isGenerating} isLoading={isGenerating} text={`Generate ${numberOfArticles} Article(s)`} loadingText="Generating..."/>
+                                <ActionButton onClick={() => handleFullAutomation()} disabled={isGenerating} isLoading={isGenerating} text={`Generate ${numberOfArticles} Article(s)`} loadingText="Generating..."/>
                                 {isGenerating && <button onClick={handleCancelGeneration} className="mt-4 text-sm text-red-600 hover:underline">Cancel Generation</button>}
                             </div>
-                             {isGenerating && (<><p className="text-center font-semibold text-indigo-700 animate-pulse">{generationStatus}</p><ProgressBar progress={generationProgress} isVisible={isGenerating} /></>)}
+                            {(isGenerating || generationStatus) && (
+                                <div className="mt-6 space-y-4">
+                                    {generationStatus && (
+                                        <p className={`text-center font-semibold ${getStatusStyle()}`}>
+                                            {generationStatus}
+                                        </p>
+                                    )}
+                                    {isGenerating && <ProgressBar progress={generationProgress} isVisible={isGenerating} />}
+                                </div>
+                            )}
                             {analysisResults.length > 0 && <ResultsDisplay analysisResults={analysisResults} totalIterations={12} />}
                             {paperSources.length > 0 && <SourceDisplay sources={paperSources} />}
                         </div>

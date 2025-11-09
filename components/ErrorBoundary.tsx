@@ -11,12 +11,15 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // FIX: Switched to class property for state initialization. The constructor-based approach was causing type resolution errors where component properties like `state` and `props` were not being found.
-  state: ErrorBoundaryState = {
-    hasError: false,
-    error: null,
-    errorInfo: null,
-  };
+  // FIX: Switched to a constructor-based approach for state initialization. The class property method was causing type resolution errors where 'this.setState' and 'this.props' were not found. Using a constructor with super(props) is the standard way to initialize a class component and should fix these errors.
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null,
+      errorInfo: null,
+    };
+  }
 
   static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     // Update state so the next render will show the fallback UI.

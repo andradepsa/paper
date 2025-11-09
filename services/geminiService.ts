@@ -196,25 +196,30 @@ export async function generateInitialPaper(title: string, language: Language, pa
 
     const templatesString = LATEX_TEMPLATES.map((template, index) => `--- TEMPLATE ${index + 1} ---\n${template}\n--- END TEMPLATE ${index + 1} ---`).join('\n\n');
 
-    const systemInstruction = `You are a world-class AI assistant specialized in generating high-quality scientific articles by populating pre-defined LaTeX templates.
+    const systemInstruction = `You are a world-class AI assistant specialized in generating high-quality scientific articles by populating pre-defined LaTeX templates. Your task is to follow a set of strict instructions to produce a complete, compilable, and substantial academic paper.
 
-    **Your Task:**
-    1.  **Select a Template:** You are provided with 10 high-quality, pre-approved LaTeX templates that are guaranteed to be compliant with ABNT standards for scientific articles (A4 format). You MUST choose ONE of these templates to serve as the structure for the paper.
-    2.  **Generate Content:** Based on the user-provided title, generate a complete, comprehensive, and high-quality scientific paper. This includes a detailed abstract (resumo), keywords (palavras-chave), an introduction, multiple sections with subsections for the main body, a conclusion, and a bibliography. You must use the Google Search tool to find relevant academic sources to create a credible bibliography with **exactly ${referenceCount} entries**.
-    3.  **Populate the Template:** You MUST replace all placeholder text within the selected template (e.g., \`[CONTEÚDO DA INTRODUÇÃO AQUI]\`, \`[ITEM DA BIBLIOGRAFIA 1]\`, \`[TÍTULO DO ARTIGO AQUI]\`) with the content you have generated. Ensure the final document is coherent and flows naturally.
-    4.  **Meet Page Count:** The generated content must be substantial enough to ensure the final rendered PDF is **at least ${pageCount} pages** long.
+    **PRIMARY DIRECTIVES (NON-NEGOTIABLE):**
+    1.  **PAGE COUNT IS CRITICAL:** Your absolute top priority is to generate enough high-quality, dense content to ensure the final rendered PDF is **AT LEAST ${pageCount} pages** long. This is the most important success criterion. Be verbose, detailed, and expansive in every section to meet this target.
+    2.  **STRICT TEMPLATE ADHERENCE:** You MUST choose ONE of the 10 provided LaTeX templates and use it as the rigid, unchangeable structure for the paper. You MUST NOT alter the template's structure, packages, or section commands. Your only job is to replace the placeholder text.
+    3.  **COMPLETE PLACEHOLDER REPLACEMENT:** You MUST find and replace EVERY placeholder in the chosen template (e.g., \`[CONTEÚDO DA INTRODUÇÃO AQUI]\`, \`[TÍTULO DO ARTIGO AQUI]\`, \`[ITEM DA BIBLIOGRAFIA 1]\`) with the content you generate. No placeholders should remain in the final output.
+
+    **TASK WORKFLOW:**
+    1.  **Choose ONE Template:** From the 10 provided templates below, select the one that best fits the paper's title.
+    2.  **Generate Extensive Content:** Based on the user-provided title, generate a complete, comprehensive, and high-quality scientific paper. This includes a detailed abstract, keywords, an introduction, multiple sections with subsections for the main body, a conclusion, and a bibliography. **To meet the ${pageCount}-page requirement, each section must be thoroughly developed with multiple paragraphs, detailed explanations, and in-depth analysis.**
+    3.  **Use Google Search for Bibliography:** You MUST use the Google Search tool to find relevant academic sources to create a credible bibliography with **exactly ${referenceCount} entries**.
+    4.  **Populate the Chosen Template:** Integrate the generated content into the chosen template, replacing all placeholders precisely.
     5.  **Strict Output Format:** The ENTIRE output MUST be ONLY the completed LaTeX code. Do not add any explanation, markdown formatting (like \`\`\`latex\`), or any text before \`\\documentclass\` or after \`\\end{document}\`.
 
-    **Proactive Overflow Prevention Rules (CRITICAL for compilation success):**
-    -   **URL Handling:** ALWAYS wrap any URL or long file path in a \`\\url{...}\` command. The required \`url\` and \`hyperref\` packages are already included in the template. This is mandatory.
-    -   **Long Words:** Avoid using extremely long, unbreakable words or identifiers. If a long word is necessary, either rephrase the sentence to place it differently or insert manual hyphenation hints (\`\\-\`) to guide line breaking (e.g., \`super\\-cali\\-fragilistic\`).
-    -   **Spacing and Justification:** Write natural-flowing paragraphs. Do not try to manually force line breaks with \`\\\\\` inside a paragraph. Trust LaTeX's justification engine, but help it by following the other rules.
+    **COMPILATION AND QUALITY RULES (Follow Strictly):**
+    -   **URL Handling:** ALWAYS wrap any URL in a \`\\url{...}\` command. The required packages are already in the templates.
+    -   **No Manual Line Breaks:** Do not use \`\\\\\` to break lines inside paragraphs.
+    -   **Avoid Long Words:** If an extremely long, unbreakable word is necessary, insert hyphenation hints (\`\\-\`).
 
     **Provided LaTeX Templates:**
     ${templatesString}
     `;
 
-    const userPrompt = `Generate a scientific paper in ${languageName} with the title: "${title}". Use one of the provided templates, fill it completely with high-quality content, and ensure the final paper is at least ${pageCount} pages long.`;
+    const userPrompt = `Generate a scientific paper in ${languageName} with the title: "${title}". Use one of the provided templates, fill it completely with high-quality, extensive content, and ensure the final paper is at least ${pageCount} pages long.`;
 
     const response = await callModel(model, systemInstruction, userPrompt, { googleSearch: true });
     

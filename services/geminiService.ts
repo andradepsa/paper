@@ -194,32 +194,32 @@ export async function generateInitialPaper(title: string, language: Language, pa
     else if (pageCount === 60) referenceCount = 60;
     else if (pageCount === 100) referenceCount = 100;
 
-    const templatesString = LATEX_TEMPLATES.map((template, index) => `--- TEMPLATE ${index + 1} ---\n${template}\n--- END TEMPLATE ${index + 1} ---`).join('\n\n');
+    const templatesString = LATEX_TEMPLATES.join('\n\n');
 
-    const systemInstruction = `You are a world-class AI assistant specialized in generating high-quality scientific articles by populating pre-defined LaTeX templates. Your task is to follow a set of strict instructions to produce a complete, compilable, and substantial academic paper.
+    const systemInstruction = `You are a world-class AI assistant specialized in generating high-quality scientific articles by populating a pre-defined LaTeX template. Your task is to follow a set of strict instructions to produce a complete, compilable, and substantial academic paper.
 
     **PRIMARY DIRECTIVES (NON-NEGOTIABLE):**
     1.  **PAGE COUNT IS CRITICAL:** Your absolute top priority is to generate enough high-quality, dense content to ensure the final rendered PDF is **AT LEAST ${pageCount} pages** long. This is the most important success criterion. Be verbose, detailed, and expansive in every section to meet this target.
-    2.  **STRICT TEMPLATE ADHERENCE:** You MUST choose ONE of the 10 provided LaTeX templates and use it as the rigid, unchangeable structure for the paper. You MUST NOT alter the template's structure, packages, or section commands. Your only job is to replace the placeholder text.
-    3.  **COMPLETE PLACEHOLDER REPLACEMENT:** You MUST find and replace EVERY placeholder in the chosen template (e.g., \`[CONTEÚDO DA INTRODUÇÃO AQUI]\`, \`[TÍTULO DO ARTIGO AQUI]\`, \`[ITEM DA BIBLIOGRAFIA 1]\`) with the content you generate. No placeholders should remain in the final output.
+    2.  **STRICT TEMPLATE ADHERENCE:** You MUST use the provided LaTeX template as the rigid, unchangeable structure for the paper. You MUST NOT alter the template's structure, packages, or section commands. Your only job is to replace the placeholder text.
+    3.  **COMPLETE PLACEHOLDER REPLACEMENT:** You MUST find and replace EVERY placeholder in the template (e.g., \`[CONTEÚDO DA INTRODUÇÃO AQUI]\`, \`[TÍTULO DO ARTIGO AQUI]\`, \`[ITEM DA BIBLIOGRAFIA 1]\`) with the content you generate. No placeholders should remain in the final output.
 
     **TASK WORKFLOW:**
-    1.  **Choose ONE Template:** From the 10 provided templates below, select the one that best fits the paper's title.
+    1.  **Use the Template:** Generate extensive content to populate the single LaTeX template provided below.
     2.  **Generate Extensive Content:** Based on the user-provided title, generate a complete, comprehensive, and high-quality scientific paper. This includes a detailed abstract, keywords, an introduction, multiple sections with subsections for the main body, a conclusion, and a bibliography. **To meet the ${pageCount}-page requirement, each section must be thoroughly developed with multiple paragraphs, detailed explanations, and in-depth analysis.**
     3.  **Use Google Search for Bibliography:** You MUST use the Google Search tool to find relevant academic sources to create a credible bibliography with **exactly ${referenceCount} entries**.
-    4.  **Populate the Chosen Template:** Integrate the generated content into the chosen template, replacing all placeholders precisely.
+    4.  **Populate the Template:** Integrate the generated content into the template, replacing all placeholders precisely.
     5.  **Strict Output Format:** The ENTIRE output MUST be ONLY the completed LaTeX code. Do not add any explanation, markdown formatting (like \`\`\`latex\`), or any text before \`\\documentclass\` or after \`\\end{document}\`.
 
     **COMPILATION AND QUALITY RULES (Follow Strictly):**
-    -   **URL Handling:** ALWAYS wrap any URL in a \`\\url{...}\` command. The required packages are already in the templates.
+    -   **URL Handling:** ALWAYS wrap any URL in a \`\\url{...}\` command. The required packages are already in the template.
     -   **No Manual Line Breaks:** Do not use \`\\\\\` to break lines inside paragraphs.
     -   **Avoid Long Words:** If an extremely long, unbreakable word is necessary, insert hyphenation hints (\`\\-\`).
 
-    **Provided LaTeX Templates:**
+    **Provided LaTeX Template:**
     ${templatesString}
     `;
 
-    const userPrompt = `Generate a scientific paper in ${languageName} with the title: "${title}". Use one of the provided templates, fill it completely with high-quality, extensive content, and ensure the final paper is at least ${pageCount} pages long.`;
+    const userPrompt = `Generate a scientific paper in ${languageName} with the title: "${title}". Use the provided template, fill it completely with high-quality, extensive content, and ensure the final paper is at least ${pageCount} pages long.`;
 
     const response = await callModel(model, systemInstruction, userPrompt, { googleSearch: true });
     
@@ -333,10 +333,11 @@ export async function improvePaper(paperContent: string, analysis: AnalysisResul
 
     const systemInstruction = `You are a world-class AI assistant specialized in editing and improving scientific papers written in LaTeX. Your task is to refine the provided LaTeX paper based on specific improvement suggestions, while strictly maintaining the ABNT formatting standard.
 
-    **Critical Preservation Rules:**
-    1.  **Do Not Change Preamble/Metadata:** The entire block from \`\\documentclass\` to \`\\title{...}\` MUST be preserved exactly as in the original. This includes the \`\\hypersetup\` block and the title command, which must be \`\\title{${originalTitle}}\`.
-    2.  **Do Not Use \\maketitle:** The manual title block inside \`\\begin{document}\` must be preserved. Do NOT use the \`\\maketitle\` command.
-    3.  **Preserve Structure:** The overall ABNT LaTeX structure must be maintained: uppercase section titles, unnumbered abstract and references sections, etc.
+    **Critical Preservation Rules (NON-NEGOTIABLE):**
+    1.  **DO NOT SHORTEN THE PAPER:** Your absolute top priority is to apply the suggested improvements *without reducing the overall length of the paper*. If a suggestion implies making the text more concise (e.g., to improve 'WRITING CLARITY'), you MUST compensate by expanding on other areas, adding more detail, examples, or deeper analysis to ensure the total word/page count does not decrease. If the 'PAGE COUNT COMPLIANCE' score is low, you must actively and significantly expand the paper's content in all sections. This rule overrides all other suggestions if they conflict.
+    2.  **Do Not Change Preamble/Metadata:** The entire block from \`\\documentclass\` to \`\\title{...}\` MUST be preserved exactly as in the original. This includes the \`\\hypersetup\` block and the title command, which must be \`\\title{${originalTitle}}\`.
+    3.  **Do Not Use \\maketitle:** The manual title block inside \`\\begin{document}\` must be preserved. Do NOT use the \`\\maketitle\` command.
+    4.  **Preserve Structure:** The overall ABNT LaTeX structure must be maintained: uppercase section titles, unnumbered abstract and references sections, etc.
 
     **Instructions for Improvement:**
     -   Critically analyze the provided "Current Paper Content" against the "Improvement Points".

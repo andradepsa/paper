@@ -1,6 +1,7 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
-import { generateInitialPaper, analyzePaper, improvePaper, generatePaperTitle, fixLatexPaper, reformatPaperWithStyleGuide } from './services/geminiService';
+import { generateInitialPaper, analyzePaper, improvePaper, generatePaperTitle, fixLatexPaper, reformatPaperWithStyleGuide, expandPaperContent } from './services/geminiService';
 import type { Language, IterationAnalysis, PaperSource, AnalysisResult, StyleGuide } from './types';
 import { LANGUAGES, AVAILABLE_MODELS, ANALYSIS_TOPICS, MATH_TOPICS, FIX_OPTIONS, STYLE_GUIDES } from './constants';
 import { addSuccessfulCompilation, addFailedCompilation } from './services/compilationExamples';
@@ -50,7 +51,7 @@ const App: React.FC = () => {
     const [isApiModalOpen, setIsApiModalOpen] = useState(false);
 
     // == STEP 1: GENERATION STATE ==
-    const [language, setLanguage] = useState<Language>('en');
+    const [language, setLanguage] = useState<Language>('pt');
     const [generationModel, setGenerationModel] = useState('gemini-2.5-pro');
     const [analysisModel, setAnalysisModel] = useState('gemini-2.5-flash');
     const [pageCount, setPageCount] = useState(12);
@@ -205,57 +206,29 @@ const App: React.FC = () => {
     }, [isSchedulerActive]); // This effect depends only on the active status
 
     // FIX: Add the missing extractMetadata function to parse LaTeX content.
-    const extractMetadata = (latex: string, forUpload: boolean = false): { title: string, abstract: string, authors: Author[], keywords: string } => {
-        let title = '';
-        const titleMatch1 = latex.match(/\\title\{([^}]+)\}/);
-        if (titleMatch1) {
-            title = titleMatch1[1];
-        } else {
-            const titleMatch2 = latex.match(/\\textbf\{\\MakeUppercase\{([^}]+)\}\}/);
-            if (titleMatch2) title = titleMatch2[1];
-        }
-
-        const abstractMatch = latex.match(/\\begin\{abstract\}\n([\s\S]*?)\n\\end\{abstract\}/) || latex.match(/\\begin\{center\}\\textbf\{RESUMO\}\\end\{center\}\n([\s\S]*?)\n\n\\noindent\\textbf\{Palavras-chave:/);
+    const extractMetadata = (latex: string): { title: string, abstract: string, authors: Author[], keywords: string } => {
+        const getMatch = (regex: RegExp) => (latex.match(regex) || [])[1] || '';
+    
+        const title = getMatch(/pdftitle=\{([^}]+)\}/);
+        const abstract = getMatch(/pdfsubject=\{([^}]+)\}/);
+        const keywords = getMatch(/pdfkeywords=\{([^}]+)\}/);
+        const authorBlock = getMatch(/pdfauthor=\{([^}]+)\}/);
         
-        let keywords = '';
-        const keywordsMatch1 = latex.match(/\\textbf\{Keywords:\}\s*([^\\n]+)/);
-        if (keywordsMatch1) {
-            keywords = keywordsMatch1[1].replace(/\.$/, '').trim();
-        } else {
-            const keywordsMatch2 = latex.match(/\\textbf\{Palavras-chave:\}\s*([^.]+)\./);
-            if (keywordsMatch2) keywords = keywordsMatch2[1].trim();
-        }
-
         const authors: Author[] = [];
-        let authorBlockMatch = latex.match(/\\author\{([\s\S]*?)\}/);
-        if (!authorBlockMatch) {
-            authorBlockMatch = latex.match(/\\begin\{flushright\}([\s\S]*?)\\end\{flushright\}/);
+        if (authorBlock) {
+             const orcidMatch = latex.match(/ORCID:\s*\\url\{https?:\/\/orcid\.org\/([^}]+)\}/);
+             authors.push({
+                 name: authorBlock,
+                 affiliation: '', // This info is not in the hypersetup block
+                 orcid: orcidMatch ? orcidMatch[1] : ''
+             });
         }
-
-        if (authorBlockMatch) {
-            const authorLines = authorBlockMatch[1].trim().split(/\\\\/);
-            authorLines.forEach(line => {
-                const trimmedLine = line.trim();
-                if (!trimmedLine) return;
-
-                const nameMatch = trimmedLine.match(/^(.*?)(?:\\small|$)/);
-                if (nameMatch && nameMatch[1].trim()) {
-                    const name = nameMatch[1].trim();
-                    const orcidMatch = trimmedLine.match(/\\url\{https?:\/\/orcid\.org\/([^}]+)\}/);
-                    authors.push({
-                        name: name,
-                        affiliation: '',
-                        orcid: orcidMatch ? orcidMatch[1] : ''
-                    });
-                }
-            });
-        }
-
+    
         return {
             title: title.trim(),
-            abstract: abstractMatch ? abstractMatch[1].trim() : '',
+            abstract: abstract.trim(),
             authors: authors,
-            keywords: keywords
+            keywords: keywords.trim().split(/,\s*|\s*,\s*/).join(', ')
         };
     };
 
@@ -389,23 +362,27 @@ const App: React.FC = () => {
         }
         
         statusUpdater("Publicando no Zenodo...");
-        // FIX: Replaced call to non-existent 'extractMetadata' with the newly defined function.
-        const metadataForUpload = extractMetadata(articleLatexCode, true);
-        const keywordsForUpload = articleLatexCode.match(/\\keywords\{([^}]+)\}/)?.[1] || '';
+        const metadataForUpload = extractMetadata(articleLatexCode);
 
         const MAX_UPLOAD_RETRIES = 10;
         for (let attempt = 1; attempt <= MAX_UPLOAD_RETRIES; attempt++) {
             try {
                 const baseUrl = useSandbox ? 'https://sandbox.zenodo.org/api' : 'https://zenodo.org/api';
                 
+                statusUpdater(`Etapa 1: Criando novo depósito... (Tentativa ${attempt})`);
                 const createResponse = await fetch(`${baseUrl}/deposit/depositions`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${storedToken}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({})
                 });
-                if (!createResponse.ok) throw new Error(`Erro ${createResponse.status}: Falha ao criar depósito.`);
+                if (!createResponse.ok) {
+                     const errorData = await createResponse.json();
+                     throw new Error(`Erro ${createResponse.status}: Falha ao criar depósito. ${JSON.stringify(errorData.errors)}`);
+                }
                 const deposit = await createResponse.json();
+                statusUpdater(`Depósito criado com sucesso. ID: ${deposit.id}`);
 
+                statusUpdater(`Etapa 2: Enviando arquivo "paper.pdf"...`);
                 const formData = new FormData();
                 formData.append('file', compiledFile, 'paper.pdf');
                 const uploadResponse = await fetch(`${baseUrl}/deposit/depositions/${deposit.id}/files`, {
@@ -414,8 +391,9 @@ const App: React.FC = () => {
                     body: formData
                 });
                 if (!uploadResponse.ok) throw new Error('Falha no upload do PDF');
+                statusUpdater(`Upload do arquivo concluído.`);
 
-                const keywordsArray = keywordsForUpload.split(',').map(k => k.trim()).filter(k => k);
+                const keywordsArray = metadataForUpload.keywords.split(',').map(k => k.trim()).filter(k => k);
                 const metadataPayload = {
                     metadata: {
                         title: metadataForUpload.title,
@@ -429,19 +407,29 @@ const App: React.FC = () => {
                         keywords: keywordsArray.length > 0 ? keywordsArray : undefined
                     }
                 };
+                 statusUpdater(`Etapa 3: Adicionando metadados...`);
                 const metadataResponse = await fetch(`${baseUrl}/deposit/depositions/${deposit.id}`, {
                     method: 'PUT',
                     headers: { 'Authorization': `Bearer ${storedToken}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify(metadataPayload)
                 });
-                if (!metadataResponse.ok) throw new Error('Falha ao atualizar metadados');
+                 if (!metadataResponse.ok) {
+                    const errorData = await metadataResponse.json();
+                    throw new Error(`Falha ao atualizar metadados: ${metadataResponse.status} - ${JSON.stringify(errorData)}`);
+                }
+                statusUpdater(`Metadados adicionados com sucesso.`);
 
+                statusUpdater(`Etapa 4: Publicando o depósito...`);
                 const publishResponse = await fetch(`${baseUrl}/deposit/depositions/${deposit.id}/actions/publish`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${storedToken}` }
                 });
-                if (!publishResponse.ok) throw new Error('Falha ao publicar');
+                 if (!publishResponse.ok) {
+                    const errorData = await publishResponse.json();
+                    throw new Error(`Falha ao publicar: ${publishResponse.status} - ${JSON.stringify(errorData)}`);
+                }
                 const published = await publishResponse.json();
+                statusUpdater(`Publicação bem-sucedida!`);
 
                 const zenodoLink = useSandbox ? `https://sandbox.zenodo.org/records/${deposit.id}` : `https://zenodo.org/records/${deposit.id}`;
                 return { 
@@ -530,13 +518,22 @@ const App: React.FC = () => {
                     };
                     setAnalysisResults(prev => [...prev, iterationData]);
     
-                    const hasLowScores = analysisResult.analysis.some(res => res.score < 7.0);
-                    if (!hasLowScores) {
+                    const pageCountAnalysis = analysisResult.analysis.find(res => res.topicName === 'PAGE COUNT COMPLIANCE');
+                    const otherAnalyses = analysisResult.analysis.filter(res => res.topicName !== 'PAGE COUNT COMPLIANCE');
+                    const isPageCountTheOnlyRed = pageCountAnalysis && pageCountAnalysis.score < 7.0 && otherAnalyses.every(res => res.score >= 7.0);
+                    const hasAnyRedScores = analysisResult.analysis.some(res => res.score < 7.0);
+
+                    if (isPageCountTheOnlyRed) {
+                        setGenerationStatus(`Artigo ${i}/${articlesToProcess}: Qualidade alta, mas artigo está curto. Iniciando modo de expansão...`);
+                        setGenerationProgress(90);
+                        const expandedPaper = await expandPaperContent(currentPaper, pageCount, language, generationModel);
+                        currentPaper = expandedPaper;
+                        setGenerationStatus(`✅ Artigo ${i} expandido com sucesso para atender ao requisito de páginas.`);
+                        break; 
+                    } else if (!hasAnyRedScores) {
                         setGenerationStatus(`✅ Análise do Artigo ${i} concluída! Alta qualidade atingida.`);
                         break;
-                    }
-    
-                    if (iter < TOTAL_ITERATIONS) {
+                    } else if (iter < TOTAL_ITERATIONS) {
                         setGenerationStatus(`Artigo ${i}/${articlesToProcess}: Refinando com base no feedback ${iter}...`);
                         const improvedPaper = await improvePaper(currentPaper, analysisResult, language, generationModel);
                         currentPaper = improvedPaper;
@@ -567,8 +564,7 @@ const App: React.FC = () => {
                     setGenerationStatus(`Artigo ${i}/${articlesToProcess}: ❌ Falha na compilação: ${errorMessage}. Salvando para tentativa posterior.`);
                     console.error(`Compilation failed for paper ${i}:`, error);
 
-                    // FIX: Replaced call to non-existent 'extractMetadata' with the newly defined function.
-                    const metadataForTitle = extractMetadata(finalPaperCode, true);
+                    const metadataForTitle = extractMetadata(finalPaperCode);
 
                     const newLogEntry: ArticleLogEntry = {
                         id: new Date().toISOString() + Math.random(),
@@ -603,8 +599,7 @@ const App: React.FC = () => {
                     console.error(`Upload failed for paper ${i}:`, uploadError);
                     
                     const pdfBase64 = await fileToBase64(compiledFile);
-                    // FIX: Replaced call to non-existent 'extractMetadata' with the newly defined function.
-                    const metadataForTitle = extractMetadata(finalFixedCode, true);
+                    const metadataForTitle = extractMetadata(finalFixedCode);
 
                     const newLogEntry: ArticleLogEntry = {
                         id: new Date().toISOString() + Math.random(),
@@ -874,11 +869,14 @@ const App: React.FC = () => {
             <ApiKeyModal isOpen={isApiModalOpen} onClose={() => setIsApiModalOpen(false)} onSave={handleSaveKeys} />
 
             <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-200">
-                <PageSelector
-                    options={[1, 2, 3, 4]}
-                    selectedPageCount={step}
-                    onSelect={setStep}
-                />
+                <nav className="flex justify-center mb-8">
+                    <div className="flex space-x-2 bg-gray-100 p-2 rounded-full">
+                        <button onClick={() => setStep(1)} className={`px-6 py-2 rounded-full font-semibold transition-colors ${step === 1 ? 'bg-indigo-600 text-white shadow' : 'text-gray-600 hover:bg-gray-200'}`}>1. Geração</button>
+                        <button onClick={() => setStep(2)} disabled={!finalLatexCode && !editingArticleId} className={`px-6 py-2 rounded-full font-semibold transition-colors ${step === 2 ? 'bg-indigo-600 text-white shadow' : 'text-gray-600 hover:bg-gray-200'} disabled:opacity-50 disabled:cursor-not-allowed`}>2. Compilar & Editar</button>
+                        <button onClick={() => setStep(3)} disabled={!compiledPdfFile} className={`px-6 py-2 rounded-full font-semibold transition-colors ${step === 3 ? 'bg-indigo-600 text-white shadow' : 'text-gray-600 hover:bg-gray-200'} disabled:opacity-50 disabled:cursor-not-allowed`}>3. Publicar</button>
+                        <button onClick={() => setStep(4)} className={`px-6 py-2 rounded-full font-semibold transition-colors ${step === 4 ? 'bg-indigo-600 text-white shadow' : 'text-gray-600 hover:bg-gray-200'}`}>4. Histórico</button>
+                    </div>
+                </nav>
             
                 {/* Step 1: Generation */}
                 {step === 1 && (
@@ -886,17 +884,17 @@ const App: React.FC = () => {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             {/* Left Panel: Controls */}
                             <div className="p-6 bg-gray-50 rounded-lg border border-gray-200">
-                                 <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Generation Settings</h2>
+                                 <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Configurações de Geração</h2>
                                 
                                 <LanguageSelector languages={LANGUAGES} selectedLanguage={language} onSelect={setLanguage} />
                                 
-                                <PageSelector options={[12, 30, 60, 100]} selectedPageCount={pageCount} onSelect={setPageCount} />
+                                <div className="text-center my-4"><label className="block text-lg font-semibold text-gray-700 mb-2">Páginas Desejadas</label><div className="flex justify-center"><PageSelector options={[12, 30, 60, 100]} selectedPageCount={pageCount} onSelect={setPageCount} /></div></div>
                                
-                                <ModelSelector models={AVAILABLE_MODELS} selectedModel={generationModel} onSelect={setGenerationModel} label="Generation Model" />
-                                <ModelSelector models={AVAILABLE_MODELS.filter(m => m.name.includes('gemini'))} selectedModel={analysisModel} onSelect={setAnalysisModel} label="Analysis & Fix Model" />
+                                <ModelSelector models={AVAILABLE_MODELS} selectedModel={generationModel} onSelect={setGenerationModel} label="Modelo de Geração" />
+                                <ModelSelector models={AVAILABLE_MODELS.filter(m => m.name.includes('gemini'))} selectedModel={analysisModel} onSelect={setAnalysisModel} label="Modelo de Análise e Correção" />
 
                                 <div className="mt-6 text-center">
-                                    <label htmlFor="article-count" className="block text-lg font-semibold text-gray-700 mb-2">Number of Articles to Generate</label>
+                                    <label htmlFor="article-count" className="block text-lg font-semibold text-gray-700 mb-2">Nº de Artigos para Gerar</label>
                                     <input
                                         type="number"
                                         id="article-count"
@@ -911,24 +909,24 @@ const App: React.FC = () => {
                                         onClick={() => handleFullAutomation()}
                                         disabled={isGenerating}
                                         isLoading={isGenerating}
-                                        text="Start Full Automation"
-                                        loadingText="Processing..."
+                                        text="Iniciar Automação Completa"
+                                        loadingText="Processando..."
                                     />
                                      {isGenerating && (
                                         <button onClick={handleCancelGeneration} className="text-sm text-red-600 hover:underline">
-                                            Cancel Generation
+                                            Cancelar Geração
                                         </button>
                                      )}
                                 </div>
 
                                 <div className="mt-8 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-md">
-                                    <h3 className="font-bold text-blue-800">Daily Automation Scheduler</h3>
+                                    <h3 className="font-bold text-blue-800">Agendador Diário de Automação</h3>
                                     <p className="text-sm text-blue-700 mt-1">
-                                        Automatically generates 7 articles every day at 3:00 AM.
+                                        Gera automaticamente 7 artigos todos os dias às 3:00 da manhã.
                                     </p>
                                      <div className="mt-3 flex items-center justify-center">
                                         <button onClick={handleToggleScheduler} className={`px-4 py-2 rounded-full font-semibold text-white transition-colors ${isSchedulerActive ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}>
-                                            {isSchedulerActive ? 'Deactivate Scheduler' : 'Activate Scheduler'}
+                                            {isSchedulerActive ? 'Desativar Agendador' : 'Ativar Agendador'}
                                         </button>
                                     </div>
                                 </div>
@@ -937,7 +935,7 @@ const App: React.FC = () => {
 
                             {/* Right Panel: Results */}
                             <div className="p-6">
-                                <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">Generation Progress</h2>
+                                <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">Progresso da Geração</h2>
                                  <div className="text-center font-semibold text-gray-700 h-12 flex items-center justify-center">
                                     {generationStatus}
                                 </div>
@@ -945,7 +943,7 @@ const App: React.FC = () => {
                                 
                                 {generatedTitle && !isGenerating && (
                                      <div className="mt-4 p-4 bg-green-50 border-l-4 border-green-500 rounded-md">
-                                        <h3 className="font-bold text-green-800">Generated Title:</h3>
+                                        <h3 className="font-bold text-green-800">Título Gerado:</h3>
                                         <p className="text-green-700 mt-1">{generatedTitle}</p>
                                     </div>
                                 )}
@@ -961,7 +959,7 @@ const App: React.FC = () => {
                                 {isGenerationComplete && (
                                      <div className="mt-6 text-center">
                                         <button onClick={() => setStep(2)} className="text-lg font-bold py-3 px-12 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:scale-105 shadow-lg transition-transform">
-                                            Proceed to Compilation
+                                            Prosseguir para Compilação
                                         </button>
                                     </div>
                                 )}
@@ -983,44 +981,55 @@ const App: React.FC = () => {
                                         onClick={handleReformat}
                                         disabled={isReformatting || !latexCode.trim()}
                                         isLoading={isReformatting}
-                                        text="Reformat References"
-                                        loadingText="Reformatting..."
+                                        text="Reformatar Referências"
+                                        loadingText="Reformatando..."
                                     />
                                 </div>
                                 <div className="mt-6 text-center">
                                      <ActionButton
-                                        onClick={() => handleExtractMetadataAndProceed()}
+                                        onClick={() => handleCompile(latexCode)}
                                         disabled={isCompiling}
                                         isLoading={isCompiling}
-                                        text="Extract Metadata & Proceed to Compile"
-                                        loadingText="Compiling..."
+                                        text="Compilar Código LaTeX"
+                                        loadingText="Compilando..."
                                     />
                                 </div>
                             </div>
                              {/* Right Panel: Preview & Status */}
                             <div>
-                                 <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">Compilation Preview</h2>
+                                 <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">Pré-visualização da Compilação</h2>
                                 <div className="text-center my-4 h-10 flex items-center justify-center">{compilationStatus}</div>
 
                                 {pdfPreviewUrl ? (
                                     <div className="p-2 border border-gray-300 rounded-lg shadow-inner bg-gray-100">
                                         <iframe src={pdfPreviewUrl} title="PDF Preview" className="w-full h-96 border-none" />
-                                         <div className="mt-4 text-center">
+                                         <div className="mt-4 flex justify-center gap-4">
                                             <button onClick={handleDownloadPdf} className="px-6 py-2 bg-gray-700 text-white font-semibold rounded-full hover:bg-gray-800 transition-colors">
                                                 Download PDF
                                             </button>
+                                            <form action="https://www.overleaf.com/docs" method="post" target="_blank">
+                                                <input type="hidden" name="main.tex" value={latexCode} />
+                                                <button type="submit" className="px-6 py-2 bg-green-600 text-white font-semibold rounded-full hover:bg-green-700 transition-colors">
+                                                  Enviar para Overleaf
+                                                </button>
+                                            </form>
                                         </div>
                                     </div>
                                 ) : (
                                     <div className="w-full h-96 bg-gray-200 flex items-center justify-center text-gray-500 rounded-lg">
-                                        PDF preview will appear here after successful compilation.
+                                        A pré-visualização do PDF aparecerá aqui após a compilação bem-sucedida.
                                     </div>
                                 )}
 
                                  {compiledPdfFile && (
                                      <div className="mt-6 text-center">
-                                        <button onClick={() => setStep(3)} className="text-lg font-bold py-3 px-12 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:scale-105 shadow-lg transition-transform">
-                                            Proceed to Publication
+                                        <button onClick={() => {
+                                            const metadata = extractMetadata(latexCode);
+                                            setExtractedMetadata(metadata);
+                                            setKeywordsInput(metadata.keywords);
+                                            setStep(3);
+                                        }} className="text-lg font-bold py-3 px-12 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:scale-105 shadow-lg transition-transform">
+                                            Prosseguir para Publicação
                                         </button>
                                     </div>
                                 )}
@@ -1032,7 +1041,7 @@ const App: React.FC = () => {
                 {/* Step 3: Upload */}
                  {step === 3 && (
                      <section id="upload">
-                         <h2 className="text-3xl font-bold text-center mb-6 text-gray-800">Publish to Zenodo</h2>
+                         <h2 className="text-3xl font-bold text-center mb-6 text-gray-800">Publicar no Zenodo</h2>
                         <ZenodoUploader
                             ref={uploaderRef}
                             title={extractedMetadata.title}
@@ -1055,8 +1064,8 @@ const App: React.FC = () => {
                                 onClick={handlePublish}
                                 disabled={isUploading || !compiledPdfFile}
                                 isLoading={isUploading}
-                                text="Publish Article"
-                                loadingText="Publishing..."
+                                text="Publicar Artigo"
+                                loadingText="Publicando..."
                             />
                         </div>
                      </section>
@@ -1065,16 +1074,16 @@ const App: React.FC = () => {
                 {/* Step 4: Published Articles */}
                 {step === 4 && (
                      <section id="published-articles">
-                        <h2 className="text-3xl font-bold text-center mb-6 text-gray-800">Articles Log</h2>
+                        <h2 className="text-3xl font-bold text-center mb-6 text-gray-800">Histórico de Artigos</h2>
 
                          {/* Filtering Controls */}
                         <div className="flex flex-wrap justify-center items-center gap-4 p-4 mb-6 bg-gray-100 rounded-lg">
-                            <input type="text" placeholder="Day (e.g., 5)" value={filter.day} onChange={(e) => setFilter(f => ({ ...f, day: e.target.value }))} className="p-2 border rounded-md w-24" />
-                            <input type="text" placeholder="Month (e.g., 7)" value={filter.month} onChange={(e) => setFilter(f => ({ ...f, month: e.target.value }))} className="p-2 border rounded-md w-24" />
-                            <input type="text" placeholder="Year (e.g., 2024)" value={filter.year} onChange={(e) => setFilter(f => ({ ...f, year: e.target.value }))} className="p-2 border rounded-md w-32" />
-                            <button onClick={() => setFilter({ day: '', month: '', year: '' })} className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">Clear Filters</button>
+                            <input type="text" placeholder="Dia (ex: 5)" value={filter.day} onChange={(e) => setFilter(f => ({ ...f, day: e.target.value }))} className="p-2 border rounded-md w-24" />
+                            <input type="text" placeholder="Mês (ex: 7)" value={filter.month} onChange={(e) => setFilter(f => ({ ...f, month: e.target.value }))} className="p-2 border rounded-md w-24" />
+                            <input type="text" placeholder="Ano (ex: 2024)" value={filter.year} onChange={(e) => setFilter(f => ({ ...f, year: e.target.value }))} className="p-2 border rounded-md w-32" />
+                            <button onClick={() => setFilter({ day: '', month: '', year: '' })} className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">Limpar Filtros</button>
                         </div>
-                         <p className="text-center text-gray-600 mb-4">Showing {filteredArticles.length} of {articlesLog.length} total articles.</p>
+                         <p className="text-center text-gray-600 mb-4">Mostrando {filteredArticles.length} de {articlesLog.length} artigos no total.</p>
                         
                         <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                              {filteredArticles.map(article => (
@@ -1087,15 +1096,15 @@ const App: React.FC = () => {
                                     }}
                                 >
                                     <div className="flex-grow">
-                                        <p className="font-bold text-lg text-gray-800">{article.title || "Untitled Article"}</p>
+                                        <p className="font-bold text-lg text-gray-800">{article.title || "Artigo sem Título"}</p>
                                         <p className="text-sm text-gray-500">{new Date(article.date).toLocaleString()}</p>
                                         {article.status === 'published' && (
                                             <div className="mt-2 text-sm">
                                                 <span className="font-semibold">DOI:</span> <a href={article.link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">{article.doi}</a>
                                             </div>
                                         )}
-                                        {article.status === 'unpublished' && <p className="text-sm text-yellow-600 mt-1 font-semibold">Ready to Publish</p>}
-                                        {article.status === 'compilation-failed' && <p className="text-sm text-red-600 mt-1 font-semibold">Compilation Failed</p>}
+                                        {article.status === 'unpublished' && <button onClick={() => handleRecompile(article)} className="text-sm text-yellow-700 mt-1 font-semibold hover:underline">Continuar Edição e Publicação</button>}
+                                        {article.status === 'compilation-failed' && <p className="text-sm text-red-600 mt-1 font-semibold">Falha na Compilação</p>}
                                     </div>
                                     <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
                                          {article.status === 'unpublished' && (
@@ -1104,21 +1113,21 @@ const App: React.FC = () => {
                                                 disabled={republishingId === article.id}
                                                 className="px-3 py-1 text-sm bg-green-500 text-white rounded-md hover:bg-green-600 disabled:bg-gray-400"
                                             >
-                                                {republishingId === article.id ? 'Publishing...' : 'Publish Now'}
+                                                {republishingId === article.id ? 'Publicando...' : 'Publicar Agora'}
                                             </button>
                                         )}
                                          {article.status === 'compilation-failed' && (
                                             <button onClick={() => handleRecompile(article)} className="px-3 py-1 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600">
-                                                Recompile
+                                                Tentar Recompilar
                                             </button>
                                         )}
                                         <button onClick={() => handleDeleteArticle(article.id)} className="px-3 py-1 text-sm bg-red-500 text-white rounded-md hover:bg-red-600">
-                                            Delete
+                                            Excluir
                                         </button>
                                     </div>
                                 </div>
                             ))}
-                             {filteredArticles.length === 0 && <p className="text-center text-gray-500 py-8">No articles found matching the filter.</p>}
+                             {filteredArticles.length === 0 && <p className="text-center text-gray-500 py-8">Nenhum artigo encontrado com os filtros aplicados.</p>}
                         </div>
                      </section>
                 )}
@@ -1126,7 +1135,7 @@ const App: React.FC = () => {
                  {step > 1 && (
                      <div className="mt-8 text-center border-t pt-6">
                         <button onClick={handleReturnToStart} className="text-indigo-600 hover:underline font-semibold">
-                            &larr; Back to Start (New Generation)
+                            &larr; Voltar ao Início (Nova Geração)
                         </button>
                     </div>
                 )}

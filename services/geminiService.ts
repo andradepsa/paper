@@ -472,3 +472,54 @@ export async function reformatPaperWithStyleGuide(paperContent: string, styleGui
 
     return paper;
 }
+
+export async function expandPaperContent(
+    paperContent: string,
+    pageCount: number,
+    language: Language,
+    model: string
+): Promise<string> {
+    const languageName = LANGUAGES.find(l => l.code === language)?.name || 'English';
+    const targetWordCountMin = pageCount * 350;
+    const targetWordCountMax = pageCount * 500;
+
+    const systemInstruction = `You are an expert academic writer AI, tasked with a single, critical mission: content expansion.
+
+    **!!! URGENT & CRITICAL PRIORITY: EXPAND THE ARTICLE !!!**
+
+    **Context:**
+    You are given a scientific paper that has already been analyzed and is considered high-quality in terms of structure, clarity, and focus. However, it is critically short and fails to meet the required length.
+
+    **Your Sole Task:**
+    Substantially expand the provided LaTeX paper to meet a target of at least ${pageCount} pages. To achieve this, you must add significant new content to reach a total word count between ${targetWordCountMin} and ${targetWordCountMax} words.
+
+    **How to Expand (You MUST do this):**
+    -   **Add Depth:** Elaborate on existing sections. Add more detailed derivations, in-depth explanations of concepts, or more thorough analysis.
+    -   **Add Examples:** Introduce new, illustrative examples to clarify complex points.
+    -   **Expand Discussion:** Deepen the discussion of implications, connect findings more strongly to the literature, or explore alternative interpretations.
+    -   **DO NOT** just rephrase existing sentences or add filler content. The new content must be dense, meaningful, and maintain the high academic rigor of the original paper.
+
+    **Critical Preservation Rules (NON-NEGOTIABLE):**
+    1.  **PRESERVE PREAMBLE & STRUCTURE:** The entire LaTeX preamble (from \`\\documentclass\` to before \`\\begin{document}\`) and the overall ABNT structure MUST be preserved.
+    2.  **PRESERVE AUTHOR BLOCK:** The author block containing the name "SÉRGIO DE ANDRADE, PAULO" and the ORCID MUST NOT be altered or removed.
+    3.  **STRICT OUTPUT FORMAT:** The ENTIRE output MUST be ONLY the completed, expanded LaTeX code. Do not add any explanation or markdown formatting.
+
+    Your goal is not to "fix" or "improve" the paper's quality in other areas—that is already done. Your one and only goal is to make it longer by adding valuable, high-quality academic content.`;
+
+    const userPrompt = `The following paper is of high quality but is too short. Expand it with new, rigorous academic content to ensure it meets the goal of at least ${pageCount} pages (target word count: ${targetWordCountMin}-${targetWordCountMax}). Return the complete, expanded LaTeX code.
+
+    **Current LaTeX Paper:**
+    \`\`\`latex
+    ${paperContent}
+    \`\`\`
+    `;
+    
+    const response = await callModel(model, systemInstruction, userPrompt);
+    let paper = response.text.trim().replace(/^```latex\s*|```\s*$/g, '');
+
+    if (!paper.includes('\\end{document}')) {
+        paper += '\n\\end{document}';
+    }
+
+    return paper;
+}

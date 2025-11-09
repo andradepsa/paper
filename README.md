@@ -1,3 +1,4 @@
+
 # Advanced Scientific Paper Generator - User Manual
 
 <div align="center">
@@ -22,7 +23,7 @@ ORCID: https://orcid.org/0009-0004-2555-3178
 
 *   **AI Title Generation:** Generates a novel and high-impact research paper title from a broad mathematical topic.
 *   **Complete LaTeX Paper Generation:** Produces a full scientific paper, including an abstract, introduction, methodology, results, discussion, conclusion, and a formatted bibliography, all in valid LaTeX.
-*   **Iterative Quality Analysis:** Performs up to 12 analysis iterations, evaluating the paper on 28 quality metrics (e.g., Topic Focus, Writing Clarity, Methodological Rigor, LaTeX Technical Accuracy).
+*   **Iterative Quality Analysis:** Performs up to 3 analysis iterations, evaluating the paper on 28 quality metrics (e.g., Topic Focus, Writing Clarity, Methodological Rigor, LaTeX Technical Accuracy).
 *   **Intelligent Paper Improvement:** Based on the analysis, the AI iteratively refines the LaTeX source code to address identified weaknesses.
 *   **Early Analysis Completion:** The analysis process stops early if the paper reaches a high quality standard (no "red" scores), saving time and computational resources.
 *   **Multi-language Support:** Generate papers and receive feedback in Portuguese, English, Spanish, or French.
@@ -67,7 +68,7 @@ This is the crucial step where the paper generation and iterative analysis proce
 *   **Process Flow (What to expect):**
     1.  **"Generating Title...":** The application will first generate a new and impactful title based on a randomly selected mathematical topic. You will see this title displayed in the "Results" section once it's ready.
     2.  **"Generating Paper...":** Next, the AI will write the complete scientific paper in LaTeX format, using the generated title and consulting external sources via Google Search to ground the content and bibliography.
-    3.  **"Analyzing...":** The main iterative process begins. The AI will analyze the paper against the 28 metrics, provide detailed feedback, and then attempt to improve the paper. This cycle will repeat for several iterations (up to 12).
+    3.  **"Analyzing...":** The main iterative process begins. The AI will analyze the paper against the 28 metrics, provide detailed feedback, and then attempt to improve the paper. This cycle will repeat for several iterations (up to 3).
 *   **Progress Bar:** A progress bar will appear in the "Results" section, showing the overall progress of the generation and analysis.
 *   **Early Analysis Completion:** If the paper reaches a high quality standard (no "red" scores) before all iterations are completed, a **"✅ Analysis complete!"** message will appear, and the process will stop early, saving you time.
 
@@ -101,7 +102,7 @@ Once the process is complete (or has stopped early), you can review the results 
 *   **Purpose:** To provide a detailed breakdown of the AI's multi-iteration review process, showing scores and improvement suggestions for each quality metric.
 *   **Location:** This panel will appear on the right side of the "Results" section.
 *   **Understanding the Display:**
-    *   **Iterations:** Each numbered block (e.g., "═══ ITERATION 1 of 12 ═══") represents one round of analysis and improvement.
+    *   **Iterations:** Each numbered block (e.g., "═══ ITERATION 1 of 3 ═══") represents one round of analysis and improvement.
     *   **Topic Name:** The specific quality metric being evaluated (e.g., "WRITING CLARITY", "METHODOLOGICAL RIGOR").
     *   **Score:** A numerical score from 0.0 to 10.0, indicating the paper's quality for that metric.
         *   **Green (8.5-10.0):** High quality, little to no improvement needed.
@@ -181,7 +182,7 @@ The table below illustrates the impact of these optimizations, comparing the cos
 | Initial Paper Generation    | `gemini-2.5-pro`   | ~150,000 tokens                    | ~150,000 tokens                        | 'Pro' model maintained for maximum quality in the main generation. |
 | Analysis (per iteration)    | `gemini-2.5-flash` | ~130,000 tokens                    | **~45,000 tokens**                     | Using 'flash' model and JSON schema for structured response.       |
 | Improvement (per iteration) | `gemini-2.5-pro`   | ~140,000 tokens                    | ~140,000 tokens                        | 'Pro' model maintained for high-quality, surgical refinement.      |
-| **Total Iterative Cycle (Ex: 3 iterations)** | **Mixed**          | ~2,080,000 tokens (12 iterations) | **~415,000 tokens**                    | **Early completion** upon reaching quality (no red scores).        |
+| **Total Iterative Cycle (Ex: 2 iterations)** | **Mixed**          | ~820,000 tokens (3 iterations) | **~415,000 tokens**                    | **Early completion** upon reaching quality (no red scores).        |
 
 ## 6. Troubleshooting
 

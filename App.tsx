@@ -480,7 +480,7 @@ const App: React.FC = () => {
             let finalPaperCode = '';
     
             try {
-                const TOTAL_ITERATIONS = 12;
+                const TOTAL_ITERATIONS = 3;
                 let currentPaper = '';
                 
                 // 1. Generate Title
@@ -857,7 +857,7 @@ const App: React.FC = () => {
                                     {isGenerating && <ProgressBar progress={generationProgress} isVisible={isGenerating} />}
                                 </div>
                             )}
-                            {analysisResults.length > 0 && <ResultsDisplay analysisResults={analysisResults} totalIterations={12} />}
+                            {analysisResults.length > 0 && <ResultsDisplay analysisResults={analysisResults} totalIterations={3} />}
                             {paperSources.length > 0 && <SourceDisplay sources={paperSources} />}
                         </div>
                     </Section>

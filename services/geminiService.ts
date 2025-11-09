@@ -238,14 +238,22 @@ export async function generateInitialPaper(title: string, language: Language, pa
     else if (pageCount === 60) referenceCount = 60;
     else if (pageCount === 100) referenceCount = 100;
 
-    const templatesString = LATEX_TEMPLATES[0]; // Use the single template
+    // Programmatically insert the title into the template to guarantee its presence.
+    const templateWithTitle = LATEX_TEMPLATES[0].replace(/\[TÍTULO DO ARTIGO AQUI\]/g, title);
 
     const systemInstruction = `You are a world-class AI assistant specialized in generating high-quality scientific articles by populating a pre-defined LaTeX template. Your task is to follow a set of strict instructions to produce a complete, compilable, and substantial academic paper.
 
     **PRIMARY DIRECTIVES (NON-NEGOTIABLE):**
     1.  **PAGE COUNT IS CRITICAL:** Your absolute top priority is to generate enough high-quality, dense content to ensure the final rendered PDF is **AT LEAST ${pageCount} pages** long. This is the most important success criterion.
     2.  **STRICT TEMPLATE ADHERENCE:** You MUST use the provided LaTeX template as the rigid, unchangeable structure for the paper. You MUST NOT alter the template's structure, packages, or section commands. Your only job is to replace the placeholder text.
-    3.  **COMPLETE PLACEHOLDER REPLACEMENT:** You MUST find and replace EVERY placeholder in the template (e.g., \`[CONTEÚDO DA INTRODUÇÃO AQUI]\`, \`[TÍTULO DO ARTIGO AQUI]\`, \`[ITEM DA BIBLIOGRAFIA 1]\`) with the content you generate. No placeholders should remain in the final output.
+    3.  **PRESERVE AUTHOR BLOCK:** The following author block, located after the title, is critical and **MUST be preserved exactly as is**. Do not delete or modify it:
+        \`\`\`latex
+        \\begin{flushright}
+          SÉRGIO DE ANDRADE, PAULO \\\\
+          \\small ORCID: \\url{https://orcid.org/0009-0004-2555-3178}
+        \\end{flushright}
+        \`\`\`
+    4.  **COMPLETE PLACEHOLDER REPLACEMENT:** You MUST find and replace EVERY remaining placeholder in the template (e.g., \`[CONTEÚDO DA INTRODUÇÃO AQUI]\`, \`[ITEM DA BIBLIOGRAFIA 1]\`) with the content you generate. No placeholders should remain in the final output.
 
     **Content Density and Structure Guidelines (Follow these to meet the page count):**
     -   **Target Word Count:** To achieve ${pageCount} pages in ABNT format (Times 12, 1.5 spacing), you must generate between **${pageCount * 350} and ${pageCount * 500} words** of main body content. Aim for the higher end of this range.
@@ -253,10 +261,10 @@ export async function generateInitialPaper(title: string, language: Language, pa
     -   **Be Verbose and Detailed:** Be expansive in every section. Provide background, explain concepts thoroughly, and discuss implications in detail to meet the word and page count targets.
 
     **TASK WORKFLOW:**
-    1.  **Use the Template:** Generate extensive content to populate the single LaTeX template provided below.
-    2.  **Generate Extensive Content:** Based on the user-provided title, generate a complete, comprehensive, and high-quality scientific paper following the density guidelines above.
+    1.  **Use the Template:** Generate extensive content to populate the single LaTeX template provided below. The title is already included.
+    2.  **Generate Extensive Content:** Based on the embedded title, generate a complete, comprehensive, and high-quality scientific paper following the density guidelines above.
     3.  **Use Google Search for Bibliography:** You MUST use the Google Search tool to find relevant academic sources to create a credible bibliography with **exactly ${referenceCount} entries**.
-    4.  **Populate the Template:** Integrate the generated content into the template, replacing all placeholders precisely.
+    4.  **Populate the Template:** Integrate the generated content into the template, replacing all remaining placeholders precisely.
     5.  **Strict Output Format:** The ENTIRE output MUST be ONLY the completed LaTeX code. Do not add any explanation, markdown formatting (like \`\`\`latex\`), or any text before \`\\documentclass\` or after \`\\end{document}\`.
 
     **COMPILATION AND QUALITY RULES (Follow Strictly):**
@@ -265,10 +273,10 @@ export async function generateInitialPaper(title: string, language: Language, pa
     -   **Avoid Long Words:** If an extremely long, unbreakable word is necessary, insert hyphenation hints (\`\\-\`).
 
     **Provided LaTeX Template:**
-    ${templatesString}
+    ${templateWithTitle}
     `;
 
-    const userPrompt = `Generate a scientific paper in ${languageName} with the title: "${title}". Use the provided template, fill it completely with high-quality, extensive content, and ensure the final paper is at least ${pageCount} pages long by following all density and structure guidelines.`;
+    const userPrompt = `The title has been pre-filled in the LaTeX template. Generate a comprehensive scientific paper in ${languageName}. Use the provided template, fill all remaining placeholders (like [RESUMO...], [CONTEÚDO...], etc.) completely with high-quality, extensive content, and ensure the final paper is at least ${pageCount} pages long by following all density and structure guidelines.`;
 
     const response = await callModel(model, systemInstruction, userPrompt, { googleSearch: true });
     
@@ -379,7 +387,14 @@ export async function improvePaper(paperContent: string, analysis: AnalysisResul
 
     **Critical Preservation Rules (NON-NEGOTIABLE):**
     1.  **DO NOT SHORTEN THE PAPER:** Your absolute top priority is to apply the suggested improvements *without reducing the overall length of the paper*. If a suggestion implies making the text more concise, you MUST compensate by expanding on other areas to ensure the total word/page count does not decrease. If the 'PAGE COUNT COMPLIANCE' score is low, you must actively and significantly expand the paper's content. This rule overrides all other suggestions if they conflict.
-    2.  **PRESERVE STRUCTURE:** You are prohibited from altering the document's preamble (from \\documentclass to \\begin{document}) and its final command (\\end{document}). Your changes must only be within the document's body.
+    2.  **PRESERVE AUTHOR BLOCK:** The following author block is critical and **MUST be preserved exactly as is**. Do not delete or modify it:
+        \`\`\`latex
+        \\begin{flushright}
+          SÉRGIO DE ANDRADE, PAULO \\\\
+          \\small ORCID: \\url{https://orcid.org/0009-0004-2555-3178}
+        \\end{flushright}
+        \`\`\`
+    3.  **PRESERVE STRUCTURE:** You are prohibited from altering the document's preamble (from \\documentclass to \\begin{document}) and its final command (\\end{document}). Your changes must only be within the document's body.
 
     **Improvement Strategy (VERY IMPORTANT):**
     1.  **Focus Exclusively on Critical Fixes:** The user will provide a list of "CRITICAL IMPROVEMENTS". Your ONLY task is to address these specific issues thoroughly. Do not address any other perceived flaws.
@@ -424,7 +439,14 @@ export async function fixLatexPaper(paperContent: string, fixesToApply: { key: s
     ${priorityInstruction}
 
     **Critical Preservation Rules:**
-    1.  **PRESERVE STRUCTURE:** You must not alter the document's preamble (from \\documentclass to \\begin{document}) or its final command (\\end{document}). Your changes must only be within the document's body.
+    1.  **PRESERVE AUTHOR BLOCK:** The following author block is critical and **MUST be preserved exactly as is**. Do not delete or modify it:
+        \`\`\`latex
+        \\begin{flushright}
+          SÉRGIO DE ANDRADE, PAULO \\\\
+          \\small ORCID: \\url{https://orcid.org/0009-0004-2555-3178}
+        \\end{flushright}
+        \`\`\`
+    2.  **PRESERVE STRUCTURE:** You must not alter the document's preamble (from \\documentclass to \\begin{document}) or its final command (\\end{document}). Your changes must only be within the document's body.
 
     **Instructions for Fixing:**
     -   You will receive the full LaTeX source code of a paper.
@@ -459,7 +481,13 @@ export async function reformatPaperWithStyleGuide(paperContent: string, styleGui
     **CRITICAL INSTRUCTIONS:**
     1.  You will receive the full LaTeX source code of a paper.
     2.  Your task is to reformat **ONLY** the content within the \`\\section*{REFERÊNCIAS}\` section.
-    3.  You **MUST NOT** change any other part of the document. The preamble, abstract, body text, conclusion, etc., must remain absolutely identical to the original.
+    3.  You **MUST NOT** change any other part of the document. The preamble, abstract, body text, conclusion, title, and especially the **author block** must remain absolutely identical to the original. The author block to preserve is:
+        \`\`\`latex
+        \\begin{flushright}
+          SÉRGIO DE ANDRADE, PAULO \\\\
+          \\small ORCID: \\url{https://orcid.org/0009-0004-2555-3178}
+        \\end{flushright}
+        \`\`\`
     4.  The new reference list must strictly adhere to the **${styleGuideInfo.name} (${styleGuideInfo.description})** formatting rules.
     5.  The final output must be the **COMPLETE, FULL** LaTeX document, with only the reference section's content modified. Do not provide only the reference section or include any explanatory text or markdown formatting.
     `;

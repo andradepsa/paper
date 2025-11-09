@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { generateInitialPaper, analyzePaper, improvePaper, generatePaperTitle, fixLatexPaper, reformatPaperWithStyleGuide } from './services/geminiService';
 import type { Language, IterationAnalysis, PaperSource, AnalysisResult, StyleGuide } from './types';
@@ -53,7 +52,7 @@ const App: React.FC = () => {
     const [isApiModalOpen, setIsApiModalOpen] = useState(false);
 
     // == STEP 1: GENERATION STATE ==
-    const [language, setLanguage] = useState<Language>('en');
+    const [language, setLanguage] = useState<Language>('pt');
     const [generationModel, setGenerationModel] = useState('gemini-2.5-pro');
     const [analysisModel, setAnalysisModel] = useState('gemini-2.5-flash');
     const [pageCount, setPageCount] = useState(12);
@@ -508,7 +507,7 @@ const App: React.FC = () => {
                     currentAnalysisResults.push(iterationData);
 
                     const hasRedScores = iterationData.results.some(r => r.score < 7.0);
-                    if (!hasRedScores && iter > 1) {
+                    if (!hasRedScores) {
                         setGenerationStatus(`[${new Date().toLocaleTimeString()}] Artigo ${i}: Qualidade alta atingida. Concluindo a análise.`);
                         break; // Early exit
                     }
@@ -637,7 +636,7 @@ const App: React.FC = () => {
 
                 // Check for early completion
                 const hasRedScores = iterationData.results.some(r => r.score < 7.0);
-                if (!hasRedScores && i > 1) { // Stop if quality is high after at least one improvement round
+                if (!hasRedScores) {
                     setGenerationStatus('✅ Análise concluída! O artigo atingiu um alto padrão de qualidade.');
                     setGenerationProgress(100);
                     break; 

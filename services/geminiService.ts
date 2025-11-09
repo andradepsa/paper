@@ -1,3 +1,4 @@
+// FIX: Removed file marker comments from the top and bottom of the file which were causing TypeScript compilation errors.
 import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 import type { Language, AnalysisResult, PaperSource, StyleGuide } from '../types';
 import { ANALYSIS_TOPICS, LANGUAGES, FIX_OPTIONS, STYLE_GUIDES } from '../constants';
@@ -242,19 +243,24 @@ export async function generateInitialPaper(title: string, language: Language, pa
     const systemInstruction = `You are a world-class AI assistant specialized in generating high-quality scientific articles by populating a pre-defined LaTeX template. Your task is to follow a set of strict instructions to produce a complete, compilable, and substantial academic paper.
 
     **PRIMARY DIRECTIVES (NON-NEGOTIABLE):**
-    1.  **PAGE COUNT IS CRITICAL:** Your absolute top priority is to generate enough high-quality, dense content to ensure the final rendered PDF is **AT LEAST ${pageCount} pages** long. This is the most important success criterion. Be verbose, detailed, and expansive in every section to meet this target.
+    1.  **PAGE COUNT IS CRITICAL:** Your absolute top priority is to generate enough high-quality, dense content to ensure the final rendered PDF is **AT LEAST ${pageCount} pages** long. This is the most important success criterion.
     2.  **STRICT TEMPLATE ADHERENCE:** You MUST use the provided LaTeX template as the rigid, unchangeable structure for the paper. You MUST NOT alter the template's structure, packages, or section commands. Your only job is to replace the placeholder text.
     3.  **COMPLETE PLACEHOLDER REPLACEMENT:** You MUST find and replace EVERY placeholder in the template (e.g., \`[CONTEÚDO DA INTRODUÇÃO AQUI]\`, \`[TÍTULO DO ARTIGO AQUI]\`, \`[ITEM DA BIBLIOGRAFIA 1]\`) with the content you generate. No placeholders should remain in the final output.
 
+    **Content Density and Structure Guidelines (Follow these to meet the page count):**
+    -   **Target Word Count:** To achieve ${pageCount} pages in ABNT format (Times 12, 1.5 spacing), you must generate between **${pageCount * 350} and ${pageCount * 500} words** of main body content. Aim for the higher end of this range.
+    -   **Paragraph Structure:** The paper should have a total of **at least ${pageCount * 3} substantial paragraphs**. This means each section must be thoroughly developed with multiple paragraphs, detailed explanations, and in-depth analysis.
+    -   **Be Verbose and Detailed:** Be expansive in every section. Provide background, explain concepts thoroughly, and discuss implications in detail to meet the word and page count targets.
+
     **TASK WORKFLOW:**
     1.  **Use the Template:** Generate extensive content to populate the single LaTeX template provided below.
-    2.  **Generate Extensive Content:** Based on the user-provided title, generate a complete, comprehensive, and high-quality scientific paper. This includes a detailed abstract, keywords, an introduction, multiple sections with subsections for the main body, a conclusion, and a bibliography. **To meet the ${pageCount}-page requirement, each section must be thoroughly developed with multiple paragraphs, detailed explanations, and in-depth analysis.**
+    2.  **Generate Extensive Content:** Based on the user-provided title, generate a complete, comprehensive, and high-quality scientific paper following the density guidelines above.
     3.  **Use Google Search for Bibliography:** You MUST use the Google Search tool to find relevant academic sources to create a credible bibliography with **exactly ${referenceCount} entries**.
     4.  **Populate the Template:** Integrate the generated content into the template, replacing all placeholders precisely.
     5.  **Strict Output Format:** The ENTIRE output MUST be ONLY the completed LaTeX code. Do not add any explanation, markdown formatting (like \`\`\`latex\`), or any text before \`\\documentclass\` or after \`\\end{document}\`.
 
     **COMPILATION AND QUALITY RULES (Follow Strictly):**
-    -   **URL Handling:** ALWAYS wrap any URL in a \`\\url{...}\` command. The required packages are already in the template.
+    -   **URL Handling:** ALWAYS wrap any URL in a \`\\url{...}\` command.
     -   **No Manual Line Breaks:** Do not use \`\\\\\` to break lines inside paragraphs.
     -   **Avoid Long Words:** If an extremely long, unbreakable word is necessary, insert hyphenation hints (\`\\-\`).
 
@@ -262,7 +268,7 @@ export async function generateInitialPaper(title: string, language: Language, pa
     ${templatesString}
     `;
 
-    const userPrompt = `Generate a scientific paper in ${languageName} with the title: "${title}". Use the provided template, fill it completely with high-quality, extensive content, and ensure the final paper is at least ${pageCount} pages long.`;
+    const userPrompt = `Generate a scientific paper in ${languageName} with the title: "${title}". Use the provided template, fill it completely with high-quality, extensive content, and ensure the final paper is at least ${pageCount} pages long by following all density and structure guidelines.`;
 
     const response = await callModel(model, systemInstruction, userPrompt, { googleSearch: true });
     
@@ -342,8 +348,8 @@ export async function analyzePaper(paperContent: string, pageCount: number, mode
 
 export async function improvePaper(paperContent: string, analysis: AnalysisResult, language: Language, model: string): Promise<string> {
     const languageName = LANGUAGES.find(l => l.code === language)?.name || 'English';
+    const pageCount = (analysis.analysis.find(a => a.topicName === 'PAGE COUNT COMPLIANCE')?.improvement.match(/\d+/) || [12])[0];
     
-    // Filter ONLY for red scores (critical issues).
     const criticalPoints = analysis.analysis
         .filter(item => item.score < 7.0)
         .map(item => `- **${item.topicName} (Score: ${item.score})**: ${item.improvement}`);
@@ -356,8 +362,20 @@ export async function improvePaper(paperContent: string, analysis: AnalysisResul
 
     const examples = getCompilationExamplesForPrompt();
     const examplesPrompt = formatExamplesForPrompt(examples);
+
+    const isPageCountCritical = analysis.analysis.some(item => item.topicName === 'PAGE COUNT COMPLIANCE' && item.score < 7.0);
+
+    let pageCountPriorityInstruction = '';
+    if (isPageCountCritical) {
+        pageCountPriorityInstruction = `
+    **!!! URGENT & CRITICAL PRIORITY !!!**
+    The most important issue to fix is 'PAGE COUNT COMPLIANCE'. The paper is severely short. Your primary and overriding task is to **SUBSTANTIALLY EXPAND** the paper's content to meet the target of at least ${pageCount} pages. To do this, you should add enough new text to reach a total word count of at least **${Number(pageCount) * 350} words**. Focus on adding detailed explanations, examples, or deeper analysis in the sections that need it most. This is not a minor edit; it is a major content generation task. All other fixes are secondary to this primary directive.
+    `;
+    }
     
     const systemInstruction = `You are a world-class AI assistant specialized in editing and improving scientific papers written in LaTeX. Your task is to refine the provided LaTeX paper based on specific, critical improvement suggestions.
+
+    ${pageCountPriorityInstruction}
 
     **Critical Preservation Rules (NON-NEGOTIABLE):**
     1.  **DO NOT SHORTEN THE PAPER:** Your absolute top priority is to apply the suggested improvements *without reducing the overall length of the paper*. If a suggestion implies making the text more concise, you MUST compensate by expanding on other areas to ensure the total word/page count does not decrease. If the 'PAGE COUNT COMPLIANCE' score is low, you must actively and significantly expand the paper's content. This rule overrides all other suggestions if they conflict.
@@ -455,7 +473,7 @@ export async function reformatPaperWithStyleGuide(paperContent: string, styleGui
     `;
 
     const response = await callModel(model, systemInstruction, userPrompt);
-    let paper = response.text.trim().replace(/^```latex\s*|```\s*$/g, '');
+    let paper = response.text.trim().replace(/^```latex\s*|```s*$/g, '');
 
     paper = verifyAndRestoreStructure(paper);
 

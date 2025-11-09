@@ -580,7 +580,7 @@ export async function ensureAbntFormatting(paperContent: string, model: string):
 
     **Actionable Formatting Checklist (Focus on these):**
     -   **Spacing:** Ensure \`\\onehalfspacing\` is correctly applied.
-    -   **Section Titles:** Verify titles follow ABNT numbering and capitalization (e.g., \`\\section{1 INTRODUÇÃO}\`).
+    -   **Section Titles:** Verify titles follow ABNT capitalization (e.g., \`\\section{INTRODUÇÃO}\`). The section numbering is handled automatically by LaTeX and should NOT be included manually in the command.
     -   **Core Sections:** Check that the abstract (\`RESUMO\`) and reference (\`REFERÊNCIAS\`) sections are correctly formatted (e.g., unnumbered with \`\\section*\`).
     -   **Bibliography (CRITICAL):** Review the entries in the reference section to ensure they strictly conform to ABNT NBR 6023.
         -   **NO LINKS:** Verify and ensure that **NO** reference entries contain any URLs, DOIs, or hyperlinks. Remove them if they exist.

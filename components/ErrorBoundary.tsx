@@ -11,10 +11,7 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // FIX: Reverted to a constructor-based state initialization.
-  // The existing class field `state` was likely causing type inference issues where `this.setState` and `this.props`
-  // were not recognized on the component instance. Using a standard constructor with `super(props)` is a more
-  // explicit and robust way to establish the component's context, resolving these "Property does not exist" errors.
+  // FIX: The component was not correctly initialized. Added a constructor with `super(props)` to establish the `this` context, which resolves errors where `this.state`, `this.props`, and `this.setState` were not recognized.
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {

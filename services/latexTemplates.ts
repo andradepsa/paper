@@ -34,6 +34,7 @@ export const LATEX_TEMPLATES: string[] = [
 \\vspace{1.5cm}
 
 \\begin{center}\\textbf{RESUMO}\\end{center}
+\\justifying
 [RESUMO COMPLETO DO ARTIGO, EM UM ÚNICO PARÁGRAFO, VAI AQUI]
 
 \\noindent\\textbf{Palavras-chave:} [PALAVRA-CHAVE 1], [PALAVRA-CHAVE 2], [PALAVRA-CHAVE 3].
@@ -138,6 +139,7 @@ export const LATEX_TEMPLATES: string[] = [
 \\vspace{1.5cm}
 
 \\begin{center}\\textbf{RESUMO}\\end{center}
+\\justifying
 [RESUMO COMPLETO DO ARTIGO, EM UM ÚNICO PARÁGRAFO, VAI AQUI]
 
 \\noindent\\textbf{Palavras-chave:} [PALAVRA-CHAVE 1], [PALAVRA-CHAVE 2], [PALAVRA-CHAVE 3], [PALAVRA-CHAVE 4].
@@ -245,6 +247,7 @@ export const LATEX_TEMPLATES: string[] = [
 \\vspace{1.5cm}
 
 \\begin{center}\\textbf{RESUMO}\\end{center}
+\\justifying
 [RESUMO COMPLETO DO ARTIGO, EM UM ÚNICO PARÁGRAFO, VAI AQUI]
 
 \\noindent\\textbf{Palavras-chave:} [PALAVRA-CHAVE 1], [PALAVRA-CHAVE 2].
@@ -352,6 +355,7 @@ export const LATEX_TEMPLATES: string[] = [
 \\vspace{1.5cm}
 
 \\begin{center}\\textbf{RESUMO}\\end{center}
+\\justifying
 [RESUMO COMPLETO DO ARTIGO, EM UM ÚNICO PARÁGRAFO, VAI AQUI]
 
 \\noindent\\textbf{Palavras-chave:} [PALAVRA-CHAVE 1], [PALAVRA-CHAVE 2], [PALAVRA-CHAVE 3], [PALAVRA-CHAVE 4], [PALAVRA-CHAVE 5].
@@ -437,7 +441,7 @@ export const LATEX_TEMPLATES: string[] = [
   pdfsubject={[RESUMO COMPLETO DO ARTIGO, EM UM ÚNICO PARÁGRAFO, VAI AQUI]},
   pdfkeywords={[PALAVRA-CHAVE 1], [PALAVRA-CHAVE 2], [PALAVRA-CHAVE 3]}
 }
-\\title{[TÍTULO DO ARTIGO AQUI]}
+\\title={[TÍTULO DO ARTIGO AQUI]}
 
 \\begin{document}
 \\onehalfspacing
@@ -453,6 +457,7 @@ export const LATEX_TEMPLATES: string[] = [
 \\vspace{1.5cm}
 
 \\begin{center}\\textbf{RESUMO}\\end{center}
+\\justifying
 [RESUMO COMPLETO DO ARTIGO, EM UM ÚNICO PARÁGRAFO, VAI AQUI]
 
 \\noindent\\textbf{Palavras-chave:} [PALAVRA-CHAVE 1], [PALAVRA-CHAVE 2], [PALAVRA-CHAVE 3].
@@ -537,6 +542,7 @@ export const LATEX_TEMPLATES: string[] = [
 \\vspace{1.5cm}
 
 \\begin{center}\\textbf{RESUMO}\\end{center}
+\\justifying
 [RESUMO COMPLETO DO ARTIGO, EM UM ÚNICO PARÁGRAFO, VAI AQUI]
 
 \\noindent\\textbf{Palavras-chave:} [PALAVRA-CHAVE 1], [PALAVRA-CHAVE 2], [PALAVRA-CHAVE 3], [PALAVRA-CHAVE 4].
@@ -608,7 +614,7 @@ export const LATEX_TEMPLATES: string[] = [
   pdfsubject={[RESUMO COMPLETO DO ARTIGO, EM UM ÚNICO PARÁGRAFO, VAI AQUI]},
   pdfkeywords={[PALAVRA-CHAVE 1], [PALAVRA-CHAVE 2], [PALAVRA-CHAVE 3]}
 }
-\\title={[TÍTULO DO ARTIGO AQUI]}
+\\title{[TÍTULO DO ARTIGO AQUI]}
 
 \\begin{document}
 \\onehalfspacing
@@ -624,6 +630,7 @@ export const LATEX_TEMPLATES: string[] = [
 \\vspace{1.5cm}
 
 \\begin{center}\\textbf{RESUMO}\\end{center}
+\\justifying
 [RESUMO COMPLETO DO ARTIGO, EM UM ÚNICO PARÁGRAFO, VAI AQUI]
 
 \\noindent\\textbf{Palavras-chave:} [PALAVRA-CHAVE 1], [PALAVRA-CHAVE 2], [PALAVRA-CHAVE 3].
@@ -689,7 +696,7 @@ export const LATEX_TEMPLATES: string[] = [
   pdfsubject={[RESUMO COMPLETO DO ARTIGO, EM UM ÚNICO PARÁGRAFO, VAI AQUI]},
   pdfkeywords={[PALAVRA-CHAVE 1], [PALAVRA-CHAVE 2], [PALAVRA-CHAVE 3], [PALAVRA-CHAVE 4]}
 }
-\\title{[TÍTULO DO ARTIGO AQUI]}
+\\title={[TÍTULO DO ARTIGO AQUI]}
 
 \\begin{document}
 \\onehalfspacing
@@ -705,6 +712,7 @@ export const LATEX_TEMPLATES: string[] = [
 \\vspace{1.5cm}
 
 \\begin{center}\\textbf{RESUMO}\\end{center}
+\\justifying
 [RESUMO COMPLETO DO ARTIGO, EM UM ÚNICO PARÁGRAFO, VAI AQUI]
 
 \\noindent\\textbf{Palavras-chave:} [PALAVRA-CHAVE 1], [PALAVRA-CHAVE 2], [PALAVRA-CHAVE 3], [PALAVRA-CHAVE 4].
@@ -773,7 +781,7 @@ export const LATEX_TEMPLATES: string[] = [
   pdfsubject={[RESUMO COMPLETO DO ARTIGO, EM UM ÚNICO PARÁGRAFO, VAI AQUI]},
   pdfkeywords={[PALAVRA-CHAVE 1], [PALAVRA-CHAVE 2], [PALAVRA-CHAVE 3]}
 }
-\\title={[TÍTULO DO ARTIGO AQUI]}
+\\title{[TÍTULO DO ARTIGO AQUI]}
 
 \\begin{document}
 \\onehalfspacing
@@ -789,6 +797,7 @@ export const LATEX_TEMPLATES: string[] = [
 \\vspace{1.5cm}
 
 \\begin{center}\\textbf{RESUMO}\\end{center}
+\\justifying
 [RESUMO COMPLETO DO ARTIGO, EM UM ÚNICO PARÁGRAFO, VAI AQUI]
 
 \\noindent\\textbf{Palavras-chave:} [PALAVRA-CHAVE 1], [PALAVRA-CHAVE 2], [PALAVRA-CHAVE 3].
@@ -861,7 +870,7 @@ export const LATEX_TEMPLATES: string[] = [
   pdfsubject={[RESUMO COMPLETO DO ARTIGO, EM UM ÚNICO PARÁGRAFO, VAI AQUI]},
   pdfkeywords={[PALAVRA-CHAVE 1], [PALAVRA-CHAVE 2], [PALAVRA-CHAVE 3], [PALAVRA-CHAVE 4]}
 }
-\\title{[TÍTULO DO ARTIGO AQUI]}
+\\title={[TÍTULO DO ARTIGO AQUI]}
 
 \\begin{document}
 \\onehalfspacing
@@ -877,6 +886,7 @@ export const LATEX_TEMPLATES: string[] = [
 \\vspace{1.5cm}
 
 \\begin{center}\\textbf{RESUMO}\\end{center}
+\\justifying
 [RESUMO COMPLETO DO ARTIGO, EM UM ÚNICO PARÁGRAFO, VAI AQUI]
 
 \\noindent\\textbf{Palavras-chave:} [PALAVRA-CHAVE 1], [PALAVRA-CHAVE 2], [PALAVRA-CHAVE 3], [PALAVRA-CHAVE 4].

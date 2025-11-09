@@ -70,7 +70,7 @@ export async function uploadToZenodo(pdfPath: string, title: string, token: stri
             publication_type: 'article',
             description: `This scientific article, titled "${title}", was automatically generated and refined using an advanced AI system based on Google's Gemini models.`,
             creators: [{
-                name: 'SÉRGIO DE ANDRADE, PAULO',
+                name: 'DE ANDRADE, PAULO SÉRGIO',
                 affiliation: 'Faculdade de Guarulhos (FG)',
                 orcid: '0009-0004-2555-3178'
             }]

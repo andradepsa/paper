@@ -11,15 +11,12 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // FIX: The component was not correctly initialized. Added a constructor with `super(props)` to establish the `this` context and initialize the state, which resolves errors where `this.state`, `this.props`, and `this.setState` were not recognized.
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-      errorInfo: null,
-    };
-  }
+  // FIX: The component was not correctly initialized. Initializing state as a class property is a modern and clean approach that ensures `this.state` is available throughout the component lifecycle, resolving errors where `this.state`, `this.props`, and `this.setState` were not recognized.
+  state: ErrorBoundaryState = {
+    hasError: false,
+    error: null,
+    errorInfo: null,
+  };
 
   static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     // Update state so the next render will show the fallback UI.

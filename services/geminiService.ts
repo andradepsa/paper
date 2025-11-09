@@ -2,7 +2,7 @@ import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 import type { Language, AnalysisResult, PaperSource, StyleGuide } from '../types';
 import { ANALYSIS_TOPICS, LANGUAGES, FIX_OPTIONS, STYLE_GUIDES } from '../constants';
 import { getCompilationExamplesForPrompt } from './compilationExamples';
-import { LATEX_TEMPLATES } from './latexTemplates';
+import { SINGLE_LATEX_TEMPLATE } from './latexTemplates';
 
 // Removed the global 'ai' instance. It will now be created on-demand.
 
@@ -194,12 +194,10 @@ export async function generateInitialPaper(title: string, language: Language, pa
     else if (pageCount === 60) referenceCount = 60;
     else if (pageCount === 100) referenceCount = 100;
 
-    const templatesString = LATEX_TEMPLATES.map((template, index) => `--- TEMPLATE ${index + 1} ---\n${template}\n--- END TEMPLATE ${index + 1} ---`).join('\n\n');
-
-    const systemInstruction = `You are a world-class AI assistant specialized in generating high-quality scientific articles by populating pre-defined LaTeX templates.
+    const systemInstruction = `You are a world-class AI assistant specialized in generating high-quality scientific articles by populating a pre-defined LaTeX template.
 
     **Your Task:**
-    1.  **Select a Template:** You are provided with 10 high-quality, pre-approved LaTeX templates that are guaranteed to be compliant with ABNT standards for scientific articles (A4 format). You MUST choose ONE of these templates to serve as the structure for the paper.
+    1.  **Use the Provided Template:** You are provided with a single, high-quality, pre-approved LaTeX template that is guaranteed to be compliant with ABNT standards for scientific articles (A4 format). You MUST use this template to structure the paper.
     2.  **Generate Content & Bibliography:** Based on the user-provided title, generate a complete, comprehensive, and high-quality scientific paper. This includes all sections from abstract to conclusion. For the bibliography, you MUST use the Google Search tool to find **excellent academic sources** to create a credible bibliography with **exactly ${referenceCount} entries**.
     3.  **Source Quality Mandate (CRITICAL):** The quality of the references is paramount. You MUST prioritize sources that are:
         -   **Peer-reviewed academic journals** (e.g., from publishers like Elsevier, Springer, IEEE, Nature, Science).
@@ -218,7 +216,7 @@ export async function generateInitialPaper(title: string, language: Language, pa
         **Correct Formatting Examples:**
         - **Journal Article:** \`SHARP, R. Y.; VÁMOS, P. Baire's category theorem and prime avoidance in complete local rings. \\textit{Archiv der Mathematik}, v. 44, n. 1, p. 243-248, 1985.\`
         - **Book:** \`ZARISKI, O.; SAMUEL, P. \\textit{Commutative Algebra}. New York: Springer-Verlag, 1958. v. 1.\`
-    5.  **Populate the Template:** You MUST replace all placeholder text within the selected template (e.g., \`[CONTEÚDO DA INTRODUÇÃO AQUI]\`, \`[ITEM DA BIBLIOGRAFIA 1]\`, \`[TÍTULO DO ARTIGO AQUI]\`) with the content you have generated. Ensure the final document is coherent and flows naturally.
+    5.  **Populate the Template:** You MUST replace all placeholder text within the provided template (e.g., \`[CONTEÚDO DA INTRODUÇÃO AQUI]\`, \`[TÍTULO DO ARTIGO AQUI]\`). For the bibliography, you must generate a list of exactly ${referenceCount} entries, each formatted correctly, and insert the entire list in place of the single placeholder \`[LISTA DE REFERÊNCIAS BIBLIOGRÁFICAS AQUI]\`. Each reference in the list should be separated by a blank line.
     6.  **Meet Page Count:** The generated content must be substantial enough to ensure the final rendered PDF is **at least ${pageCount} pages** long.
     7.  **Strict Output Format:** The ENTIRE output MUST be ONLY the completed LaTeX code. Do not add any explanation, markdown formatting (like \`\`\`latex\`), or any text before \`\\documentclass\` or after \`\\end{document}\`.
 
@@ -227,11 +225,11 @@ export async function generateInitialPaper(title: string, language: Language, pa
     -   **Long Words:** Avoid using extremely long, unbreakable words or identifiers. If a long word is necessary, either rephrase the sentence to place it differently or insert manual hyphenation hints (\`\\-\`) to guide line breaking (e.g., \`super\\-cali\\-fragilistic\`).
     -   **Spacing and Justification:** Write natural-flowing paragraphs. Do not try to manually force line breaks with \`\\\\\` inside a paragraph. Trust LaTeX's justification engine, but help it by following the other rules.
 
-    **Provided LaTeX Templates:**
-    ${templatesString}
+    **Provided LaTeX Template:**
+    ${SINGLE_LATEX_TEMPLATE}
     `;
 
-    const userPrompt = `Generate a scientific paper in ${languageName} with the title: "${title}". Use one of the provided templates, fill it completely with high-quality content, and ensure the final paper is at least ${pageCount} pages long.`;
+    const userPrompt = `Generate a scientific paper in ${languageName} with the title: "${title}". Use the provided template, fill it completely with high-quality content, and ensure the final paper is at least ${pageCount} pages long.`;
 
     const response = await callModel(model, systemInstruction, userPrompt, { googleSearch: true });
     
@@ -346,9 +344,9 @@ export async function improvePaper(paperContent: string, analysis: AnalysisResul
     const systemInstruction = `You are a world-class AI assistant specialized in editing and improving scientific papers written in LaTeX. Your task is to refine the provided LaTeX paper based on specific improvement suggestions, while strictly maintaining the ABNT formatting standard.
 
     **Critical Preservation Rules:**
-    1.  **Do Not Change Preamble/Metadata:** The entire block from \`\\documentclass\` to \`\\title{...}\` MUST be preserved exactly as in the original. This includes the \`\\hypersetup\` block and the title command, which must be \`\\title{${originalTitle}}\`.
-    2.  **Do Not Use \\maketitle:** The manual title block inside \`\\begin{document}\` must be preserved. Do NOT use the \`\\maketitle\` command.
-    3.  **Preserve Structure:** The overall ABNT LaTeX structure must be maintained: uppercase section titles, unnumbered abstract and references sections, etc.
+    1.  **Do Not Change Preamble/Metadata:** The entire block from \`\\documentclass\` to \`\\begin{document}\` MUST be preserved exactly as in the original. This includes the \`\\hypersetup\` block.
+    2.  **Preserve Title Block:** The preamble from \`\\documentclass\` to \`\\begin{document}\`, including the \`\\title\` and \`\\author\` commands, MUST be preserved. The \`\\maketitle\` command inside the document MUST also be preserved and NOT removed or altered.
+    3.  **Preserve Structure:** The overall ABNT LaTeX structure must be maintained: abstract environment, section titles, etc.
 
     **Instructions for Improvement:**
     -   Critically analyze the provided "Current Paper Content" against the "Improvement Points".
@@ -427,8 +425,8 @@ export async function fixLatexPaper(paperContent: string, fixesToApply: { key: s
     ${priorityInstruction}
 
     **Critical Preservation Rules:**
-    1.  **Do Not Change Preamble/Metadata:** The entire block from \`\\documentclass\` to \`\\title{...}\` MUST be preserved exactly as in the original. This includes the \`\\hypersetup\` block and the title command, which must be \`\\title{${originalTitle}}\`.
-    2.  **Do Not Use \\maketitle:** The manual title block inside \`\\begin{document}\` must be preserved. Do NOT use the \`\\maketitle\` command.
+    1.  **Do Not Change Preamble/Metadata:** The entire block from \`\\documentclass\` to \`\\begin{document}\` MUST be preserved exactly as in the original. This includes the \`\\hypersetup\` block.
+    2.  **Preserve Title Block:** The preamble from \`\\documentclass\` to \`\\begin{document}\`, including the \`\\title\` and \`\\author\` commands, MUST be preserved. The \`\\maketitle\` command inside the document MUST also be preserved and NOT removed or altered.
     3.  **Preserve Structure:** The overall ABNT LaTeX structure must be maintained.
 
     **Instructions for Fixing:**
@@ -541,10 +539,9 @@ export async function expandPaperContent(
     -   **DO NOT** just rephrase existing sentences or add filler content. The new content must be dense, meaningful, and maintain the high academic rigor of the original paper.
 
     **Critical Preservation Rules (NON-NEGOTIABLE):**
-    1.  **PRESERVE PREAMBLE & STRUCTURE:** The entire LaTeX preamble (from \`\\documentclass\` to before \`\\begin{document}\`) and the overall ABNT structure MUST be preserved.
-    2.  **PRESERVE AUTHOR BLOCK:** The author block containing the name "SÉRGIO DE ANDRADE, PAULO" and the ORCID MUST NOT be altered or removed.
-    3.  **PRESERVE REFERENCE FORMAT (ABNT NBR 6023): If you add new references, they must strictly follow the ABNT NBR 6023 format (authors in caps, titles italicized correctly, etc.) and MUST NOT contain any URLs, DOIs, or hyperlinks.**
-    4.  **STRICT OUTPUT FORMAT:** The ENTIRE output MUST be ONLY the completed, expanded LaTeX code. Do not add any explanation or markdown formatting.
+    1.  **PRESERVE PREAMBLE & TITLE BLOCK:** The entire LaTeX preamble (from \`\\documentclass\` to before \`\\begin{document}\`), the \`\\title\` and \`\\author\` commands, and the \`\\maketitle\` command MUST be preserved and not altered.
+    2.  **PRESERVE REFERENCE FORMAT (ABNT NBR 6023): If you add new references, they must strictly follow the ABNT NBR 6023 format (authors in caps, titles italicized correctly, etc.) and MUST NOT contain any URLs, DOIs, or hyperlinks.**
+    3.  **STRICT OUTPUT FORMAT:** The ENTIRE output MUST be ONLY the completed, expanded LaTeX code. Do not add any explanation or markdown formatting.
 
     Your goal is not to "fix" or "improve" the paper's quality in other areas—that is already done. Your one and only goal is to make it longer by adding valuable, high-quality academic content.`;
 
@@ -575,13 +572,13 @@ export async function ensureAbntFormatting(paperContent: string, model: string):
     **Critical Preservation Rules (NON-NEGOTIABLE):**
     1.  **DO NOT CHANGE CONTENT:** You must not alter the scientific meaning, arguments, or substance of the paper. Your role is purely formatting.
     2.  **PRESERVE PREAMBLE & METADATA:** The entire LaTeX preamble (from \`\\documentclass\` to before \`\\begin{document}\`) and the \`\\hypersetup\` block MUST remain absolutely untouched and identical to the original.
-    3.  **PRESERVE AUTHOR & TITLE BLOCK:** The author block, including the name 'SÉRGIO DE ANDRADE, PAULO' and the ORCID, as well as the title block, MUST NOT be altered.
+    3.  **PRESERVE PREAMBLE & TITLE BLOCK:** The entire LaTeX preamble (from \`\\documentclass\` to before \`\\begin{document}\`), the \`\\title\` and \`\\author\` commands, and the \`\\maketitle\` command MUST NOT be altered.
     4.  **PRESERVE STRUCTURE:** Do not add, remove, or reorder sections (\`\\section\`, \`\\subsection\`). The fundamental structure of the document must be preserved.
 
     **Actionable Formatting Checklist (Focus on these):**
     -   **Spacing:** Ensure \`\\onehalfspacing\` is correctly applied.
     -   **Section Titles:** Verify titles follow ABNT capitalization (e.g., \`\\section{INTRODUÇÃO}\`). The section numbering is handled automatically by LaTeX and should NOT be included manually in the command.
-    -   **Core Sections:** Check that the abstract (\`RESUMO\`) and reference (\`REFERÊNCIAS\`) sections are correctly formatted (e.g., unnumbered with \`\\section*\`).
+    -   **Core Sections:** Check that the abstract (\`\\begin{abstract}...\` and reference (\`\\section*{REFERÊNCIAS}\`) sections are correctly formatted.
     -   **Bibliography (CRITICAL):** Review the entries in the reference section to ensure they strictly conform to ABNT NBR 6023.
         -   **NO LINKS:** Verify and ensure that **NO** reference entries contain any URLs, DOIs, or hyperlinks. Remove them if they exist.
         -   **Formatting:** Check capitalization (AUTHOR, A. A.), italics (\`\\textit{...}\` for book/journal titles), and punctuation, matching these examples:
